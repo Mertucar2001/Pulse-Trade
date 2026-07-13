@@ -22,7 +22,7 @@
    1. API KEY
    ▶ Paste your Finnhub token here. One place, updates everywhere.
 ============================================================ */
-const FINNHUB_API_KEY  = "d8vj4ahr01qgrv4opg1gd8vj4ahr01qgrv4opg20";
+
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const GEO_API_URL      = "https://api.bigdatacloud.net/data/reverse-geocode-client";
 
