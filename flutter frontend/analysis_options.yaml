@@ -1,0 +1,11 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    unnecessary_underscores: ignore
+    curly_braces_in_flow_control_structures: ignore
+
+linter:
+  rules:
+    avoid_print: false

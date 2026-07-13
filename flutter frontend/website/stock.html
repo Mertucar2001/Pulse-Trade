@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTrade – Stock Detail</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="index.html"><span class="logo-icon">P</span> PulseTrade</a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="nav"><ul class="navbar-nav ms-auto" id="nav-links"></ul></div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <a href="markets.html" class="btn btn-outline-pulse btn-sm mb-3">← Back</a>
+    <h1 class="fw-bold" id="stock-name">Loading...</h1>
+    <p class="text-muted-custom" id="stock-symbol"></p>
+    <h2 class="display-6 fw-bold" id="stock-price">—</h2>
+    <p id="stock-change" class="fw-bold"></p>
+
+    <div id="currency-chips" class="mb-3"></div>
+    <div id="range-chips" class="mb-3">
+      <span class="range-chip active" data-days="1">1 Day</span>
+      <span class="range-chip" data-days="30">1 Month</span>
+      <span class="range-chip" data-days="90">3 Months</span>
+      <span class="range-chip" data-days="365">1 Year</span>
+    </div>
+
+    <div class="card-glass p-3 mb-4">
+      <div class="chart-container"><canvas id="price-chart"></canvas></div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card-glass p-3">
+          <h5 class="fw-bold">Key Metrics</h5>
+          <table class="table table-dark table-borderless mb-0" id="metrics-table"></table>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card-glass p-3">
+          <h5 class="fw-bold">About</h5>
+          <p class="text-muted-custom" id="about-text"></p>
+        </div>
+      </div>
+    </div>
+
+    <h5 class="fw-bold">Related News</h5>
+    <div id="news-list"></div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button class="btn btn-pulse flex-fill">Add to Watchlist</button>
+      <button class="btn btn-outline-pulse flex-fill">Buy / Trade</button>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById('nav-links').innerHTML = renderNav('markets.html');
+    const params = new URLSearchParams(location.search);
+    const symbol = params.get('symbol') || 'ENR.XETRA';
+    const name = params.get('name') || 'Siemens Energy AG';
+    let currentStock = null;
+    let chartDays = 30;
+
+    async function loadDetail() {
+      await initApp();
+      await loadStocksAndNews();
+      currentStock = AppState.stocks.find(s => s.symbol === symbol) || AppState.stocks[0];
+      if (!currentStock) return;
+
+      document.getElementById('stock-name').textContent = name;
+      document.getElementById('stock-symbol').textContent = currentStock.symbol;
+      document.getElementById('stock-price').textContent = formatPrice(currentStock.price, currentStock.currency);
+      const cls = currentStock.isUp ? 'text-green' : 'text-red';
+      const sign = currentStock.isUp ? '+' : '';
+      document.getElementById('stock-change').innerHTML = `<span class="${cls}">${sign}${currentStock.changePercent.toFixed(2)}% Today</span>`;
+      document.getElementById('about-text').textContent = `${name} is listed on ${REGIONS[AppState.countryCode].country} markets. Interactive Chart.js chart powered by Marketstack API data.`;
+      document.getElementById('metrics-table').innerHTML = `
+        <tr><td class="text-muted-custom">Open</td><td class="text-end">${formatPrice(currentStock.open, currentStock.currency)}</td></tr>
+        <tr><td class="text-muted-custom">High</td><td class="text-end">${formatPrice(currentStock.high, currentStock.currency)}</td></tr>
+        <tr><td class="text-muted-custom">Low</td><td class="text-end">${formatPrice(currentStock.low, currentStock.currency)}</td></tr>
+        <tr><td class="text-muted-custom">Volume</td><td class="text-end">${(currentStock.volume/1e6).toFixed(2)}M</td></tr>`;
+      document.getElementById('news-list').innerHTML = AppState.news.slice(0,2).map(n =>
+        `<div class="card-glass p-3 mb-2"><div class="fw-bold">${n.title}</div></div>`).join('');
+      currencyChipsHtml('currency-chips');
+      await updateChart();
+    }
+
+    async function updateChart() {
+      const points = await fetchHistorical(currentStock.symbol, chartDays);
+      renderChart('price-chart', points, currentStock.isUp);
+    }
+
+    document.querySelectorAll('.range-chip').forEach(chip => {
+      chip.addEventListener('click', async () => {
+        document.querySelectorAll('.range-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        chartDays = parseInt(chip.dataset.days, 10);
+        await updateChart();
+      });
+    });
+
+    async function onDataReady() {
+      if (currentStock) {
+        document.getElementById('stock-price').textContent = formatPrice(currentStock.price, currentStock.currency);
+        document.getElementById('metrics-table').innerHTML = `
+          <tr><td class="text-muted-custom">Open</td><td class="text-end">${formatPrice(currentStock.open, currentStock.currency)}</td></tr>
+          <tr><td class="text-muted-custom">High</td><td class="text-end">${formatPrice(currentStock.high, currentStock.currency)}</td></tr>
+          <tr><td class="text-muted-custom">Low</td><td class="text-end">${formatPrice(currentStock.low, currentStock.currency)}</td></tr>
+          <tr><td class="text-muted-custom">Volume</td><td class="text-end">${(currentStock.volume/1e6).toFixed(2)}M</td></tr>`;
+        currencyChipsHtml('currency-chips');
+      }
+    }
+
+    loadDetail();
+  </script>
+</body>
+</html>

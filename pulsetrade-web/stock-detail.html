@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseTrade — Siemens Energy AG</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+
+  <!-- Our global design system -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* --------------------------------------------------------
+       STOCK DETAIL PAGE — specific styles
+       Layout:
+         TOP    → stock header (badge + name + price)
+         MIDDLE → tab nav + time range + main chart canvas
+         BOTTOM → stats row + 3 info cards (About / Key Stats / Performance)
+         FOOTER → sticky Buy / Sell / Watchlist buttons
+    -------------------------------------------------------- */
+
+    /* ── STOCK HEADER ─────────────────────────────────────── */
+    .stock-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+      flex-wrap: wrap;
+    }
+
+    /* Large ticker badge on detail page */
+    .stock-header-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .stock-header-info { flex: 1; min-width: 0; }
+    .stock-header-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .stock-header-sub {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--sp-sm);
+    }
+    /* Tag pills row: Energy · Utilities */
+    .tag-row { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
+
+    /* Price block — top-right corner of header */
+    .stock-header-price {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .stock-live-price {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .stock-live-change {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .market-status {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+    /* Green pulsing dot = market open */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      /* CSS animation for the pulse effect */
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
+      70%  { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+      100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+    }
+
+    /* ── TAB NAVIGATION (Overview / Financials / News…) ───── */
+    .detail-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--sp-lg);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .detail-tabs::-webkit-scrollbar { display: none; }
+
+    .detail-tab {
+      padding: 12px var(--sp-lg);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: color var(--transition), border-color var(--transition);
+      font-family: inherit;
+    }
+    .detail-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .detail-tab:hover:not(.active) {
+      color: var(--text-primary);
+    }
+
+    /* ── CHART SECTION ─────────────────────────────────────── */
+    .chart-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+    }
+
+    /* Time range + chart type toggles row */
+    .chart-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--sp-md);
+      flex-wrap: wrap;
+      gap: var(--sp-sm);
+    }
+    .time-pills-row { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    /* Line / Candlestick toggle buttons */
+    .chart-type-toggle {
+      display: flex;
+      gap: 4px;
+    }
+    .chart-type-btn {
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      transition: background var(--transition), color var(--transition);
+    }
+    .chart-type-btn.active {
+      background: var(--accent);
+      color: #0d1a0d;
+      border-color: var(--accent);
+    }
+
+    /* Main chart canvas — ChartJS renders here */
+    .main-chart-wrapper {
+      position: relative;
+      height: 200px; /* Fixed height so ChartJS sizes correctly */
+      width: 100%;
+    }
+    #chart-main {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* ── STATS ROW (Open / High / Low / Volume / etc.) ─────── */
+    .stats-row {
+      display: grid;
+      /* Responsive: 4 columns desktop, 2 on mobile */
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--sp-md);
+      padding-top: var(--sp-md);
+      border-top: 1px solid var(--border);
+      margin-top: var(--sp-md);
+    }
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Extended stats row for more metrics */
+    .stats-row-extended {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    @media (max-width: 768px) {
+      .stats-row-extended { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ── THREE INFO CARDS ROW ──────────────────────────────── */
+    .info-cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--sp-md);
+      margin-bottom: 100px; /* Space for sticky footer buttons */
+    }
+    @media (max-width: 992px) {
+      .info-cards-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .info-cards-row { grid-template-columns: 1fr; }
+    }
+
+    /* About card company info rows */
+    .company-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .company-info-row:last-of-type { border-bottom: none; }
+    .company-info-label { color: var(--text-secondary); }
+    .company-info-value { font-weight: 600; color: var(--text-primary); }
+
+    /* Key Statistics table rows */
+    .key-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .key-stat-row:last-child { border-bottom: none; }
+    .key-stat-label { color: var(--text-secondary); }
+    .key-stat-value { font-weight: 700; color: var(--text-primary); }
+
+    /* Performance table rows (1D, 1W, 1M, etc.) */
+    .perf-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .perf-stat-row:last-child { border-bottom: none; }
+    .perf-stat-label { color: var(--text-secondary); }
+
+    /* ── STICKY BUY / SELL FOOTER ──────────────────────────── */
+    .action-footer {
+      position: fixed;
+      bottom: 0;
+      /* Offset from left to clear the sidebar */
+      left: var(--sidebar-width);
+      right: 0;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      padding: var(--sp-md) var(--sp-xl);
+      display: flex;
+      gap: var(--sp-md);
+      z-index: 50;
+    }
+    .action-footer .btn-primary  { flex: 1; }
+    .action-footer .btn-danger   { flex: 1; }
+    .action-footer .btn-watchlist {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-sm);
+      background: transparent;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.88rem;
+      padding: 13px var(--sp-lg);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+      font-family: inherit;
+    }
+    .action-footer .btn-watchlist:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .action-footer .btn-watchlist svg { width: 16px; height: 16px; }
+
+    @media (max-width: 768px) {
+      .action-footer {
+        left: 0;
+        padding: var(--sp-md);
+      }
+      .stock-header-name { font-size: 1.2rem; }
+      .stock-live-price { font-size: 1.4rem; }
+    }
+
+    /* Tab panel content sections — shown/hidden by JS */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <span class="logo-text">PulseTrade</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="home.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+      </a>
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Markets
+      </a>
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"></path>
+          <path d="M16 2v4"></path><path d="M8 2v4"></path>
+          <line x1="3" y1="10" x2="17" y2="10"></line>
+        </svg>
+        News
+      </a>
+      <!-- Trade/Exchange — ACTIVE on this page (stock detail = trading view) -->
+      <a href="stock-detail.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+        </svg>
+        Trade / Exchange
+      </a>
+      <a href="portfolio.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+        Portfolio
+      </a>
+      <a href="pro-plan.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Pro Plan
+      </a>
+      <a href="settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="index.html" class="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Mobile hamburger -->
+    <button class="mobile-menu-btn mb-3" id="mobile-menu-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6"  x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    <!-- ── STOCK HEADER ──────────────────────────────────── -->
+    <div class="stock-header">
+
+      <!-- Left: badge + name + exchange + tags -->
+      <div style="display:flex; align-items:flex-start; gap:var(--sp-md);">
+        <div class="stock-header-badge badge-sie" id="detail-badge">SIE</div>
+        <div class="stock-header-info">
+          <!--
+            id="detail-stock-name" — JS can update this if the
+            page is made dynamic for multiple stocks
+          -->
+          <div class="stock-header-name" id="detail-stock-name">Siemens Energy AG</div>
+          <div class="stock-header-sub" id="detail-stock-exchange">ENR.DE · XETRA</div>
+          <div class="tag-row">
+            <span class="tag-pill" id="detail-tag-1">Energy</span>
+            <span class="tag-pill" id="detail-tag-2">Utilities</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: live price + change + market status -->
+      <div class="stock-header-price">
+        <!-- id="detail-price" — Finnhub injection point -->
+        <div class="stock-live-price" id="detail-price">€18.24</div>
+        <div class="stock-live-change positive" id="detail-change">
+          +0.42 (+2.34%) Today
+        </div>
+        <div class="market-status">
+          <div class="status-dot" id="status-dot"></div>
+          <span id="market-status-text">Market Open</span>
+        </div>
+      </div>
+
+    </div>
+    <!-- end .stock-header -->
+
+    <!-- ── TAB NAVIGATION ───────────────────────────────── -->
+    <div class="detail-tabs" id="detail-tabs" role="tablist">
+      <button class="detail-tab active" data-tab="overview"   role="tab">Overview</button>
+      <button class="detail-tab"        data-tab="financials" role="tab">Financials</button>
+      <button class="detail-tab"        data-tab="news"       role="tab">News</button>
+      <button class="detail-tab"        data-tab="analysis"   role="tab">Analysis</button>
+      <button class="detail-tab"        data-tab="dividends"  role="tab">Dividends</button>
+      <button class="detail-tab"        data-tab="profile"    role="tab">Profile</button>
+    </div>
+
+    <!-- ── TAB PANELS ───────────────────────────────────── -->
+
+    <!-- OVERVIEW TAB (default visible) -->
+    <div class="tab-panel active" id="panel-overview">
+
+      <!-- Chart Section -->
+      <div class="chart-section">
+
+        <!-- Time range pills + Line/Candlestick toggle -->
+        <div class="chart-controls">
+          <div class="time-pills-row" id="time-pills">
+            <button class="time-pill active" data-range="1D">1D</button>
+            <button class="time-pill"        data-range="1W">1W</button>
+            <button class="time-pill"        data-range="1M">1M</button>
+            <button class="time-pill"        data-range="3M">3M</button>
+            <button class="time-pill"        data-range="6M">6M</button>
+            <button class="time-pill"        data-range="1Y">1Y</button>
+            <button class="time-pill"        data-range="5Y">5Y</button>
+            <button class="time-pill"        data-range="Max">Max</button>
+          </div>
+          <div class="chart-type-toggle">
+            <button class="chart-type-btn active" data-type="line">Line</button>
+            <button class="chart-type-btn"        data-type="candlestick">Candlestick</button>
+          </div>
+        </div>
+
+        <!-- Main chart — ChartJS renders a line chart here.
+             The canvas id="chart-main" is the Finnhub/ChartJS hook.
+             Height controlled by .main-chart-wrapper above.      -->
+        <div class="main-chart-wrapper">
+          <canvas id="chart-main" aria-label="Siemens Energy stock price chart"></canvas>
+        </div>
+
+        <!-- Stats row: Open / High / Low / Prev Close / Volume / Market Cap / P/E / Dividend -->
+        <div class="stats-row">
+          <div>
+            <div class="stat-label">Open</div>
+            <div class="stat-value" id="stat-open">17.82</div>
+          </div>
+          <div>
+            <div class="stat-label">High</div>
+            <div class="stat-value positive" id="stat-high">18.35</div>
+          </div>
+          <div>
+            <div class="stat-label">Low</div>
+            <div class="stat-value" id="stat-low">17.75</div>
+          </div>
+          <div>
+            <div class="stat-label">Prev Close</div>
+            <div class="stat-value" id="stat-prev-close">17.82</div>
+          </div>
+          <div>
+            <div class="stat-label">Volume</div>
+            <div class="stat-value" id="stat-volume">3.24M</div>
+          </div>
+          <div>
+            <div class="stat-label">Market Cap</div>
+            <div class="stat-value" id="stat-mktcap">€14.72B</div>
+          </div>
+          <div>
+            <div class="stat-label">P/E Ratio</div>
+            <div class="stat-value" id="stat-pe">21.34</div>
+          </div>
+          <div>
+            <div class="stat-label">Dividend Yield</div>
+            <div class="stat-value" id="stat-div">1.24%</div>
+          </div>
+        </div>
+
+      </div>
+      <!-- end .chart-section -->
+
+      <!-- ── THREE INFO CARDS ──────────────────────────── -->
+      <div class="info-cards-row">
+
+        <!-- Card 1: About Siemens Energy -->
+        <div class="card">
+          <div class="card-title">About Siemens Energy</div>
+          <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.6; margin-bottom:var(--sp-md);">
+            Siemens Energy AG operates worldwide in power generation,
+            transmission, grid technologies and renewable energy systems.
+            The company is a global energy technology provider focused on
+            sustainable infrastructure.
+          </p>
+          <!-- Company info table -->
+          <div class="company-info-row">
+            <span class="company-info-label">CEO</span>
+            <span class="company-info-value">Christian Bruch</span>
+          </div>
+          <div class="company-info-row">
+            <span class="company-info-label">Employees</span>
+            <span class="company-info-value">98,000+</span>
+          </div>
+          <div class="company-info-row">
+            <span class="company-info-label">Founded</span>
+            <span class="company-info-value">2020</span>
+          </div>
+          <div class="company-info-row">
+            <span class="company-info-label">Headquarters</span>
+            <span class="company-info-value">Munich, Germany</span>
+          </div>
+          <a href="#" class="link-accent mt-md d-block">View Full Profile →</a>
+        </div>
+
+        <!-- Card 2: Key Statistics -->
+        <div class="card">
+          <div class="card-title">Key Statistics</div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">52 Week High</span>
+            <span class="key-stat-value positive" id="stat-52h">€21.45</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">52 Week Low</span>
+            <span class="key-stat-value" id="stat-52l">€13.22</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">Shares Outstanding</span>
+            <span class="key-stat-value" id="stat-shares">1.12B</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">Beta</span>
+            <span class="key-stat-value" id="stat-beta">1.28</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">EPS (TTM)</span>
+            <span class="key-stat-value" id="stat-eps">€0.85</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">Revenue (TTM)</span>
+            <span class="key-stat-value" id="stat-revenue">€29.58B</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Performance -->
+        <div class="card">
+          <div class="card-title">Performance</div>
+          <div class="perf-stat-row">
+            <span class="perf-stat-label">1 Day</span>
+            <span class="positive fw-700" id="perf-1d">+2.34%</span>
+          </div>
+          <div class="perf-stat-row">
+            <span class="perf-stat-label">1 Week</span>
+            <span class="positive fw-700" id="perf-1w">+4.12%</span>
+          </div>
+          <div class="perf-stat-row">
+            <span class="perf-stat-label">1 Month</span>
+            <span class="positive fw-700" id="perf-1m">+8.67%</span>
+          </div>
+          <div class="perf-stat-row">
+            <span class="perf-stat-label">3 Months</span>
+            <span class="positive fw-700" id="perf-3m">+15.23%</span>
+          </div>
+          <div class="perf-stat-row">
+            <span class="perf-stat-label">6 Months</span>
+            <span class="positive fw-700" id="perf-6m">+22.45%</span>
+          </div>
+          <div class="perf-stat-row">
+            <span class="perf-stat-label">1 Year</span>
+            <span class="positive fw-700" id="perf-1y">+34.78%</span>
+          </div>
+        </div>
+
+      </div>
+      <!-- end .info-cards-row -->
+
+    </div>
+    <!-- end #panel-overview -->
+
+    <!-- FINANCIALS TAB -->
+    <div class="tab-panel" id="panel-financials">
+      <div class="card mb-3">
+        <div class="card-title">Income Statement (TTM)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:10px 8px;color:var(--text-secondary);font-weight:600;">Metric</th>
+              <th style="text-align:right;padding:10px 8px;color:var(--text-secondary);font-weight:600;">2024</th>
+              <th style="text-align:right;padding:10px 8px;color:var(--accent);font-weight:600;">2025 (TTM)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 8px;color:var(--text-secondary);">Revenue</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-primary);font-weight:600;">€26.4B</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€29.58B</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 8px;color:var(--text-secondary);">Gross Profit</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-primary);font-weight:600;">€4.1B</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€5.2B</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 8px;color:var(--text-secondary);">Operating Income</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-primary);font-weight:600;">€1.8B</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€2.4B</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 8px;color:var(--text-secondary);">Net Income</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-primary);font-weight:600;">€748M</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€956M</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 8px;color:var(--text-secondary);">EPS</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-primary);font-weight:600;">€0.66</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€0.85</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Balance Sheet Highlights</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-md);">
+          <div><div class="stat-label">Total Assets</div><div class="stat-value">€38.2B</div></div>
+          <div><div class="stat-label">Total Debt</div><div class="stat-value negative">€6.1B</div></div>
+          <div><div class="stat-label">Cash &amp; Equiv.</div><div class="stat-value positive">€4.8B</div></div>
+          <div><div class="stat-label">Equity</div><div class="stat-value">€12.4B</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEWS TAB -->
+    <div class="tab-panel" id="panel-news">
+      <div class="news-feed-card">
+        <a href="#" class="news-item">
+          <div class="news-icon news-icon-market">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div class="news-body">
+            <div class="news-title">Siemens Energy wins €2B contract for wind projects</div>
+            <div class="news-meta">2h ago · <span class="positive">Market</span></div>
+          </div>
+          <div class="news-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+        </a>
+        <a href="#" class="news-item">
+          <div class="news-icon news-icon-stocks">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="news-body">
+            <div class="news-title">Analysts raise ENR.DE price target to €22 — 20% upside</div>
+            <div class="news-meta">1d ago · <span style="color:#60a5fa;">Analysis</span></div>
+          </div>
+          <div class="news-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+        </a>
+        <a href="#" class="news-item">
+          <div class="news-icon" style="background:rgba(74,222,128,0.12);color:var(--accent);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div class="news-body">
+            <div class="news-title">EU Green Deal boosts demand for Siemens Energy grid tech</div>
+            <div class="news-meta">3d ago · <span style="color:#fb923c;">Economy</span></div>
+          </div>
+          <div class="news-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+        </a>
+        <a href="#" class="news-item">
+          <div class="news-icon" style="background:rgba(251,146,60,0.12);color:#fb923c;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="news-body">
+            <div class="news-title">Q2 2026 earnings beat expectations — revenue up 12% YoY</div>
+            <div class="news-meta">5d ago · <span class="positive">Earnings</span></div>
+          </div>
+          <div class="news-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ANALYSIS TAB -->
+    <div class="tab-panel" id="panel-analysis">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-md);margin-bottom:var(--sp-md);">
+
+        <!-- Analyst Ratings -->
+        <div class="card">
+          <div class="card-title">Analyst Consensus</div>
+          <!-- Buy/Hold/Sell bar -->
+          <div style="margin-bottom:var(--sp-md);">
+            <div style="font-size:1.6rem;font-weight:800;color:var(--accent);margin-bottom:4px;">Strong Buy</div>
+            <div style="font-size:0.78rem;color:var(--text-secondary);">Based on 18 analyst ratings</div>
+          </div>
+          <div style="display:flex;gap:3px;height:8px;border-radius:4px;overflow:hidden;margin-bottom:10px;">
+            <div style="background:#4ade80;flex:11;" title="Buy: 11"></div>
+            <div style="background:#60a5fa;flex:5;"  title="Hold: 5"></div>
+            <div style="background:#ef4444;flex:2;"  title="Sell: 2"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.72rem;">
+            <span class="positive">11 Buy</span>
+            <span style="color:#60a5fa;">5 Hold</span>
+            <span class="negative">2 Sell</span>
+          </div>
+        </div>
+
+        <!-- Price Targets -->
+        <div class="card">
+          <div class="card-title">Price Targets</div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">High Target</span>
+            <span class="key-stat-value positive">€24.00</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">Average Target</span>
+            <span class="key-stat-value positive">€21.50</span>
+          </div>
+          <div class="key-stat-row">
+            <span class="key-stat-label">Low Target</span>
+            <span class="key-stat-value">€16.00</span>
+          </div>
+          <div class="key-stat-row" style="border:none;">
+            <span class="key-stat-label">Current Price</span>
+            <span class="key-stat-value" id="analysis-current-price">€18.24</span>
+          </div>
+          <div style="margin-top:var(--sp-sm);padding:8px;background:var(--accent-bg);
+                      border-radius:var(--radius-sm);font-size:0.78rem;color:var(--accent);font-weight:600;text-align:center;">
+            Upside potential: +17.9%
+          </div>
+        </div>
+      </div>
+
+      <!-- Technical Indicators -->
+      <div class="card">
+        <div class="card-title">Technical Indicators</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-md);">
+          <div style="text-align:center;padding:var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;">RSI (14)</div>
+            <div style="font-size:1.1rem;font-weight:800;color:#60a5fa;">58.4</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary);">Neutral</div>
+          </div>
+          <div style="text-align:center;padding:var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;">MACD</div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--accent);">+0.42</div>
+            <div style="font-size:0.7rem;color:var(--accent);">Bullish</div>
+          </div>
+          <div style="text-align:center;padding:var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;">50d MA</div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">€17.10</div>
+            <div style="font-size:0.7rem;color:var(--accent);">Above ↑</div>
+          </div>
+          <div style="text-align:center;padding:var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;">200d MA</div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">€15.40</div>
+            <div style="font-size:0.7rem;color:var(--accent);">Above ↑</div>
+          </div>
+          <div style="text-align:center;padding:var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;">Volume</div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">3.24M</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary);">Avg: 2.8M</div>
+          </div>
+          <div style="text-align:center;padding:var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);">
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;">Signal</div>
+            <div style="font-size:1.1rem;font-weight:800;color:var(--accent);">BUY</div>
+            <div style="font-size:0.7rem;color:var(--accent);">Strong</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVIDENDS TAB -->
+    <div class="tab-panel" id="panel-dividends">
+      <div class="card mb-3">
+        <div class="card-title">Dividend Summary</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-md);margin-bottom:var(--sp-lg);">
+          <div style="text-align:center;">
+            <div class="stat-label">Annual Dividend</div>
+            <div style="font-size:1.4rem;font-weight:800;color:var(--accent);">€0.225</div>
+          </div>
+          <div style="text-align:center;">
+            <div class="stat-label">Dividend Yield</div>
+            <div style="font-size:1.4rem;font-weight:800;color:var(--accent);">1.24%</div>
+          </div>
+          <div style="text-align:center;">
+            <div class="stat-label">Payout Ratio</div>
+            <div style="font-size:1.4rem;font-weight:800;color:var(--text-primary);">26.4%</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Dividend History</div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:10px 8px;color:var(--text-secondary);font-weight:600;">Ex-Date</th>
+              <th style="text-align:right;padding:10px 8px;color:var(--text-secondary);font-weight:600;">Amount</th>
+              <th style="text-align:right;padding:10px 8px;color:var(--text-secondary);font-weight:600;">Pay Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 8px;color:var(--text-primary);">Feb 2026</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€0.225</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-secondary);">Mar 2026</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:10px 8px;color:var(--text-primary);">Feb 2025</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€0.200</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-secondary);">Mar 2025</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 8px;color:var(--text-primary);">Feb 2024</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--accent);font-weight:700;">€0.150</td>
+              <td style="padding:10px 8px;text-align:right;color:var(--text-secondary);">Mar 2024</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div class="tab-panel" id="panel-profile">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-md);">
+        <div class="card">
+          <div class="card-title">Company Overview</div>
+          <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7;margin-bottom:var(--sp-md);">
+            Siemens Energy AG is a global energy technology company headquartered in Munich, Germany.
+            Formed in 2020 as a spin-off from Siemens AG, it operates across gas services,
+            grid technologies, transformation of industry, and Siemens Gamesa renewable energy.
+          </p>
+          <div class="company-info-row"><span class="company-info-label">CEO</span><span class="company-info-value">Christian Bruch</span></div>
+          <div class="company-info-row"><span class="company-info-label">Founded</span><span class="company-info-value">2020 (Siemens AG 1847)</span></div>
+          <div class="company-info-row"><span class="company-info-label">Headquarters</span><span class="company-info-value">Munich, Germany</span></div>
+          <div class="company-info-row"><span class="company-info-label">Employees</span><span class="company-info-value">98,000+</span></div>
+          <div class="company-info-row"><span class="company-info-label">Website</span>
+            <a href="https://www.siemens-energy.com" target="_blank" class="link-accent">siemens-energy.com ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Business Segments</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+            <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-sm);">
+              <div style="font-size:0.82rem;font-weight:700;color:var(--text-primary);margin-bottom:3px;">Gas Services</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);">Turbines, compressors, service for gas power plants</div>
+            </div>
+            <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-sm);">
+              <div style="font-size:0.82rem;font-weight:700;color:var(--text-primary);margin-bottom:3px;">Grid Technologies</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);">Transformers, switchgear, HVDC systems</div>
+            </div>
+            <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-sm);">
+              <div style="font-size:0.82rem;font-weight:700;color:var(--text-primary);margin-bottom:3px;">Siemens Gamesa</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);">Onshore &amp; offshore wind turbines</div>
+            </div>
+            <div style="padding:10px;background:var(--bg-elevated);border-radius:var(--radius-sm);">
+              <div style="font-size:0.82rem;font-weight:700;color:var(--text-primary);margin-bottom:3px;">Transformation of Industry</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);">Electrification &amp; decarbonization solutions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <!-- end .main-content -->
+
+  <!-- ── STICKY ACTION FOOTER ─────────────────────────────── -->
+  <div class="action-footer">
+    <!-- ── LIVE CASH INDICATOR (Bug 3) ──────────────────── -->
+    <div id="available-cash-chip" style="display:flex; flex-direction:column;
+         justify-content:center; padding-right:var(--sp-md);
+         border-right:1px solid var(--border); white-space:nowrap;">
+      <span style="font-size:0.62rem; text-transform:uppercase;
+            letter-spacing:0.04em; color:var(--text-tertiary);">Cash</span>
+      <span id="available-cash" style="font-size:0.9rem; font-weight:800;
+            color:var(--accent);">€50,000.00</span>
+    </div>
+    <button class="btn-primary" id="btn-buy">Buy</button>
+    <button class="btn-danger"  id="btn-sell">Sell</button>
+    <button class="btn-watchlist" id="btn-watchlist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+      </svg>
+      Add to Watchlist
+    </button>
+  </div>
+
+</div>
+<!-- end .app-shell -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+  /* ============================================================
+     STOCK DETAIL PAGE — Inline JS
+     Handles:
+     1. Mobile sidebar toggle
+     2. Detail tab switching (Overview / Financials / News…)
+     3. Time range pill switching + chart data swap
+     4. Chart type toggle (Line / Candlestick label)
+     5. Buy / Sell / Watchlist button actions
+     6. Main ChartJS line chart with multiple datasets
+  ============================================================ */
+
+  /* -- 1. MOBILE SIDEBAR -- */
+  document.getElementById('mobile-menu-btn').addEventListener('click', function () {
+    document.body.classList.toggle('sidebar-open');
+  });
+
+  /* -- 2. DETAIL TABS --
+     Clicking a tab: removes .active from all tabs and panels,
+     then adds .active to the clicked tab and its matching panel.
+     data-tab on button must match id="panel-{data-tab}" on div.
+  */
+  const detailTabs   = document.querySelectorAll('#detail-tabs .detail-tab');
+  const tabPanels    = document.querySelectorAll('.tab-panel');
+
+  detailTabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      /* Deactivate all */
+      detailTabs.forEach(function (t) { t.classList.remove('active'); });
+      tabPanels.forEach(function (p) { p.classList.remove('active'); });
+
+      /* Activate clicked tab */
+      this.classList.add('active');
+      const panelId = 'panel-' + this.getAttribute('data-tab');
+      document.getElementById(panelId).classList.add('active');
+    });
+  });
+
+  /* -- 3 & 6. MAIN CHART + TIME RANGE DATA --
+     Each time range has its own dataset array.
+     When a range pill is clicked, the chart is destroyed
+     and rebuilt with the new data. This simulates what
+     a real Finnhub candle/quote API would provide.
+  */
+
+  /* Mock price data for each time range.
+     Replace these with real Finnhub API calls:
+     fetch('/api/v1/stock/candle?symbol=SIE&resolution=5&from=...&to=...&token=KEY')
+  */
+  var chartDatasets = {
+    '1D': {
+      labels: ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
+      data:   [17.82, 17.90, 18.00, 17.95, 18.05, 18.10, 18.15, 18.20, 18.24]
+    },
+    '1W': {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      data:   [17.50, 17.65, 17.80, 17.70, 17.90, 18.10, 18.24]
+    },
+    '1M': {
+      labels: ['W1','W2','W3','W4'],
+      data:   [16.80, 17.20, 17.70, 18.24]
+    },
+    '3M': {
+      labels: ['Jan','Feb','Mar'],
+      data:   [15.50, 16.80, 18.24]
+    },
+    '6M': {
+      labels: ['Jul','Aug','Sep','Oct','Nov','Dec'],
+      data:   [14.20, 14.80, 15.60, 16.40, 17.20, 18.24]
+    },
+    '1Y': {
+      labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      data:   [13.22, 13.80, 14.50, 15.00, 15.80, 16.20, 16.80, 17.10, 17.40, 17.80, 18.00, 18.24]
+    },
+    '5Y': {
+      labels: ['2021','2022','2023','2024','2025','2026'],
+      data:   [8.50, 10.20, 12.40, 14.80, 16.50, 18.24]
+    },
+    'Max': {
+      labels: ['2020','2021','2022','2023','2024','2025','2026'],
+      data:   [6.00, 8.50, 10.20, 12.40, 14.80, 16.50, 18.24]
+    }
+  };
+
+  /* Reference to the ChartJS instance so we can update/destroy it */
+  var mainChart = null;
+
+  /* buildChart — creates or rebuilds the main line chart
+     Arguments:
+       range — string key like '1D', '1W', etc.
+  */
+  function buildChart(range) {
+    const dataset = chartDatasets[range];
+    const ctx     = document.getElementById('chart-main').getContext('2d');
+
+    /* Destroy existing chart instance before creating a new one.
+       Without this, ChartJS throws "Canvas already in use" error. */
+    if (mainChart) {
+      mainChart.destroy();
+    }
+
+    /* Gradient fill under the line — green fade to transparent */
+    var gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0,   'rgba(74, 222, 128, 0.25)');
+    gradient.addColorStop(1,   'rgba(74, 222, 128, 0.00)');
+
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dataset.labels,
+        datasets: [{
+          label: 'SIE Price (€)',
+          data:  dataset.data,
+          borderColor:     '#4ade80',
+          borderWidth:     2,
+          backgroundColor: gradient,
+          fill:            true,
+          tension:         0.3,   /* Slight curve, not fully smooth */
+          pointRadius:     3,
+          pointBackgroundColor: '#4ade80',
+          pointHoverRadius: 5,
+        }]
+      },
+      options: {
+        responsive:          true,
+        maintainAspectRatio: false, /* Fills the .main-chart-wrapper height */
+        interaction: {
+          intersect: false,
+          mode:      'index', /* Tooltip shows on hover anywhere on x-axis */
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'rgba(19,23,32,0.95)',
+            borderColor:     'rgba(255,255,255,0.08)',
+            borderWidth:     1,
+            titleColor:      '#8b95a1',
+            bodyColor:       '#ffffff',
+            bodyFont:        { weight: '700' },
+            callbacks: {
+              /* Format tooltip value with euro sign */
+              label: function (context) {
+                return ' €' + context.parsed.y.toFixed(2);
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid:  { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#555f6e', font: { size: 11 } },
+          },
+          y: {
+            position: 'right', /* Y-axis on right side, like TradingView */
+            grid:     { color: 'rgba(255,255,255,0.04)' },
+            ticks: {
+              color: '#555f6e',
+              font:  { size: 11 },
+              /* Add euro sign to Y-axis labels */
+              callback: function (value) { return '€' + value.toFixed(2); }
+            },
+          }
+        }
+      }
+    });
+  }
+
+  /* Build initial chart with 1D data */
+  buildChart('1D');
+
+  /* -- TIME RANGE PILLS --
+     On click: update active style and rebuild chart with new range data.
+  */
+  document.querySelectorAll('#time-pills .time-pill').forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      /* Update active pill */
+      document.querySelectorAll('#time-pills .time-pill').forEach(function (p) {
+        p.classList.remove('active');
+      });
+      this.classList.add('active');
+
+      /* Rebuild chart with selected range */
+      buildChart(this.getAttribute('data-range'));
+    });
+  });
+
+  /* -- 4. CHART TYPE TOGGLE --
+     "Line" and "Candlestick" buttons.
+     Real candlestick requires a ChartJS plugin (chartjs-chart-financial).
+     For now we toggle the active button style and show an alert.
+     Your teammate can implement the candlestick plugin here.
+  */
+  document.querySelectorAll('.chart-type-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.chart-type-btn').forEach(function (b) {
+        b.classList.remove('active');
+      });
+      this.classList.add('active');
+
+      if (this.getAttribute('data-type') === 'candlestick') {
+        /* TODO: implement candlestick using chartjs-chart-financial plugin */
+        console.log('Candlestick mode selected — plugin needed');
+      } else {
+        buildChart(
+          document.querySelector('#time-pills .time-pill.active').getAttribute('data-range')
+        );
+      }
+    });
+  });
+
+  /* ============================================================
+     BUY / SELL MODAL SYSTEM
+     ─────────────────────────────────────────────────────────────
+     How it works:
+     1. User clicks Buy or Sell button in the sticky footer
+     2. A modal overlay appears with:
+        - Stock name + current live price
+        - Quantity input (number of shares)
+        - Total cost calculated in real time as user types
+        - Confirm button
+     3. On confirm:
+        - Reads current portfolio from sessionStorage
+        - Adds (buy) or removes (sell) shares
+        - Recalculates total balance using current prices
+        - Saves back to sessionStorage
+        - Shows a success toast notification
+        - Portfolio page reads this data on next visit
+
+     Q&A TIP: "I store the portfolio state as a JSON object
+     in sessionStorage under the key 'pt_portfolio'. Every
+     buy/sell updates it. The portfolio page reads the same
+     key and displays the updated values."
+  ============================================================ */
+
+  /* ── PORTFOLIO STATE ──────────────────────────────────────
+     Load from sessionStorage on page open.
+     If nothing is saved yet, use the default holdings.      */
+  function getPortfolio() {
+    /* FIX: delegate to PT (js/main.js) — the single source of truth —
+       instead of keeping a second copy of this parse/normalize logic. */
+    return PT.getPortfolio();
+  }
+
+  function savePortfolio(portfolio) {
+    PT.setPortfolio(portfolio);
+  }
+
+  /* Get the current stock symbol and price from the page */
+  function getCurrentSymbol() {
+    return sessionStorage.getItem('pt_selected_symbol') ?? 'ENR.DE';
+  }
+  function getCurrentShortId() {
+    const sym = getCurrentSymbol();
+    const map = { 'ENR.DE':'SIE','SAP.DE':'SAP','TSLA':'TSLA','NVDA':'NVDA','AAPL':'AAPL' };
+    return map[sym] ?? sym.split('.')[0];
+  }
+  function getCurrentPrice() {
+    /*
+      FIX (root cause): this used to parse the TEXT of #detail-price.
+      That text starts as a hardcoded placeholder ("€18.24") and is only
+      replaced with the real Finnhub price *after* an async fetch resolves
+      (see updateStockUI in main.js). Any code that ran before that fetch
+      finished — which included an IIFE right in this file that ran at
+      parse time, synchronously, on every single page load — was reading
+      the placeholder and writing it into pt_price_cache as if it were
+      real. That's what poisoned the price cache and caused the portfolio
+      total to be wildly wrong (and to "flicker" once the real price
+      eventually arrived and overwrote it).
+
+      Locale-agnostic text parsing can never fully fix this, because the
+      problem isn't the number format — it's that a DOM string is not a
+      reliable source for a price in the first place. So getCurrentPrice()
+      no longer touches the DOM at all. It asks PT (js/main.js) for the
+      best known raw number: the live Finnhub price if one has arrived,
+      else this holding's average cost, else a sane fallback.
+    */
+    const price = PT.getPrice(getCurrentShortId());
+    return price > 0 ? price : 18.24; /* Fallback: no live price and no holding yet */
+  }
+
+  /* ── SHOW TOAST NOTIFICATION ──────────────────────────────
+     A small green/red badge that slides in from the top-right
+     and disappears after 3 seconds. No alert() popups.       */
+  function showToast(message, isSuccess) {
+    /* Remove any existing toast */
+    const old = document.getElementById('trade-toast');
+    if (old) old.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'trade-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+      position:fixed; top:20px; right:24px; z-index:9999;
+      background:${isSuccess ? 'var(--accent)' : '#ef4444'};
+      color:${isSuccess ? '#0d1a0d' : '#fff'};
+      padding:12px 20px; border-radius:10px;
+      font-size:0.88rem; font-weight:700;
+      box-shadow:0 4px 20px rgba(0,0,0,0.4);
+      animation:slideInToast 0.3s ease;
+    `;
+    document.head.insertAdjacentHTML('beforeend', `
+      <style>
+        @keyframes slideInToast {
+          from { opacity:0; transform:translateX(40px); }
+          to   { opacity:1; transform:translateX(0); }
+        }
+      </style>
+    `);
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  /* ── EXECUTE TRADE ────────────────────────────────────────
+     Updates sessionStorage portfolio and refreshes UI.       */
+  function executeTrade(action, qty) {
+    const shortId   = getCurrentShortId();
+    const price     = getCurrentPrice();
+    const portfolio = getPortfolio();
+    const stockName = document.getElementById('detail-stock-name')?.textContent ?? shortId;
+
+    /* Cast everything to numbers — no string concatenation possible */
+    let holding      = portfolio[shortId] || { shares: 0, avgPrice: price };
+    holding.shares   = Number(holding.shares);
+    holding.avgPrice = Number(holding.avgPrice);
+    qty              = parseInt(qty, 10);
+    const tradeCost  = parseFloat((qty * price).toFixed(2));
+
+    /* Read current cash — default €50,000 starting balance */
+    let cash = PT.getCash();
+
+    if (action === 'buy') {
+      /* Check user has enough cash */
+      if (cash < tradeCost) {
+        showToast(`✗ Insufficient funds — need €${tradeCost.toFixed(2)}, have €${cash.toFixed(2)}`, false);
+        return false;
+      }
+      /* Weighted average price */
+      const totalShares = holding.shares + qty;
+      const totalCost   = holding.shares * holding.avgPrice + qty * price;
+      holding.avgPrice  = Number((totalCost / totalShares).toFixed(6));
+      holding.shares    = totalShares;
+      portfolio[shortId] = holding;
+      /* Deduct cash */
+      cash = parseFloat((cash - tradeCost).toFixed(2));
+      savePortfolio(portfolio);
+      PT.setCash(cash);
+      showToast(`✓ Bought ${qty} × ${stockName} @ €${price.toFixed(2)}`, true);
+
+    } else if (action === 'sell') {
+      if (holding.shares < qty) {
+        showToast(`✗ Not enough shares (have ${holding.shares}, selling ${qty})`, false);
+        return false;
+      }
+      holding.shares    = holding.shares - qty;
+      portfolio[shortId] = holding;
+      /* Return cash from sale */
+      cash = parseFloat((cash + tradeCost).toFixed(2));
+      savePortfolio(portfolio);
+      PT.setCash(cash);
+      showToast(`✓ Sold ${qty} × ${stockName} @ €${price.toFixed(2)}`, true);
+    }
+
+    recalcPortfolioBalance(portfolio, cash);
+    return true;
+  }
+
+  /* Recalculate total = stock holdings value + remaining cash */
+  function recalcPortfolioBalance(portfolio, cash) {
+    /* FIX (root cause): the old version read pt_price_cache into a
+       local variable, overwrote ONE entry in that local copy, used it
+       to compute this page's own total... and then never called
+       sessionStorage.setItem('pt_price_cache', ...) to save it back.
+       So the corrected price only ever existed in memory for the
+       split-second this function ran — every other page (portfolio.html)
+       kept reading the OLD/wrong cached price. That's the actual bug
+       behind "trades don't affect the portfolio total" and the total
+       flickering between two very different numbers.
+
+       Fix: persist the live price via PT.setPrice() (which does write
+       to sessionStorage), then compute the total via PT.recomputeTotal()
+       — the exact same formula every other page uses. */
+    const shortId   = getCurrentShortId();
+    const livePrice = getCurrentPrice();
+    PT.setPrice(shortId, livePrice);
+    if (cash !== undefined) PT.setCash(cash);
+
+    const { total, cash: finalCash } = PT.recomputeTotal();
+
+    const formatted = '€' + total.toLocaleString('de-DE', { minimumFractionDigits:2 });
+    const cashFmt   = '€' + finalCash.toLocaleString('de-DE', { minimumFractionDigits:2 });
+
+    /* Update every balance display element that exists on this page */
+    ['portfolio-balance', 'total-balance', 'portfolio-balance-main'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = formatted;
+    });
+
+    /* Update cash display in modal if open */
+    const cashEl = document.getElementById('modal-cash-balance');
+    if (cashEl) cashEl.textContent = cashFmt;
+
+    /* Also update any standalone cash indicator on the page */
+    const cashIndicator = document.getElementById('available-cash');
+    if (cashIndicator) cashIndicator.textContent = cashFmt;
+  }
+
+  /* ── MODAL HTML ───────────────────────────────────────────
+     Injected into DOM once, shown/hidden by JS.             */
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="trade-modal-overlay" style="
+      display:none; position:fixed; inset:0; z-index:300;
+      background:rgba(0,0,0,0.75); align-items:center; justify-content:center;">
+      <div id="trade-modal" style="
+        background:var(--bg-surface); border:1px solid var(--border);
+        border-radius:var(--radius-xl); padding:var(--sp-xl);
+        width:90%; max-width:360px; position:relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--sp-lg);">
+          <h3 id="modal-title" style="font-size:1.1rem; font-weight:800; color:var(--text-primary); margin:0;"></h3>
+          <button id="modal-close-btn" style="background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Stock info row -->
+        <div style="display:flex; align-items:center; gap:12px; background:var(--bg-elevated);
+                    border-radius:var(--radius-md); padding:12px; margin-bottom:var(--sp-lg);">
+          <div id="modal-badge" style="width:42px; height:42px; border-radius:8px;
+               background:var(--accent-bg); display:flex; align-items:center;
+               justify-content:center; font-size:0.65rem; font-weight:800; color:var(--accent);"></div>
+          <div>
+            <div id="modal-stock-name" style="font-size:0.9rem; font-weight:700; color:var(--text-primary);"></div>
+            <div id="modal-stock-price" style="font-size:0.82rem; color:var(--text-secondary);"></div>
+          </div>
+          <div id="modal-price-badge" style="margin-left:auto; font-size:1rem;
+               font-weight:800; color:var(--accent);"></div>
+        </div>
+
+        <!-- Quantity input -->
+        <label style="display:block; font-size:0.82rem; font-weight:600;
+                      color:var(--text-secondary); margin-bottom:6px;">
+          Number of Shares
+        </label>
+        <input type="number" id="modal-qty" min="1" value="1"
+          style="width:100%; background:var(--bg-input); border:1px solid var(--border);
+                 border-radius:var(--radius-md); color:var(--text-primary);
+                 font-size:1.1rem; font-weight:700; padding:12px 16px;
+                 outline:none; font-family:inherit; margin-bottom:var(--sp-md);"
+        />
+
+        <!-- Total cost -->
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    padding:12px; background:var(--bg-elevated); border-radius:var(--radius-md);
+                    margin-bottom:var(--sp-lg);">
+          <span style="font-size:0.82rem; color:var(--text-secondary);">Total</span>
+          <span id="modal-total" style="font-size:1.1rem; font-weight:800; color:var(--text-primary);"></span>
+        </div>
+
+        <!-- Current holdings info -->
+        <div style="font-size:0.75rem; color:var(--text-tertiary); margin-bottom:var(--sp-md); text-align:center;">
+          You currently hold <span id="modal-current-shares" style="color:var(--text-secondary); font-weight:600;"></span> shares
+          · Avg cost <span id="modal-avg-cost" style="color:var(--text-secondary); font-weight:600;"></span>
+        </div>
+
+        <!-- Available cash indicator -->
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    padding:10px 12px; background:var(--bg-elevated);
+                    border:1px solid var(--border); border-radius:var(--radius-md);
+                    margin-bottom:var(--sp-lg);">
+          <span style="font-size:0.78rem; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+            Available Cash
+          </span>
+          <span id="modal-cash-balance" style="font-size:0.9rem; font-weight:800; color:var(--accent);">€50,000.00</span>
+        </div>
+
+        <!-- Confirm button -->
+        <button id="modal-confirm-btn" style="
+          width:100%; padding:14px; border-radius:var(--radius-md); border:none;
+          font-size:1rem; font-weight:800; cursor:pointer; font-family:inherit;
+          transition:filter 0.15s;">
+        </button>
+      </div>
+    </div>
+  `);
+
+  /* ── MODAL LOGIC ──────────────────────────────────────────  */
+  let tradeAction = 'buy'; /* 'buy' or 'sell' */
+
+  const overlay     = document.getElementById('trade-modal-overlay');
+  const qtyInput    = document.getElementById('modal-qty');
+  const totalEl     = document.getElementById('modal-total');
+  const confirmBtn  = document.getElementById('modal-confirm-btn');
+
+  /* Update the total cost when quantity changes */
+  qtyInput.addEventListener('input', function () {
+    const qty   = parseInt(this.value) || 0;
+    const price = getCurrentPrice();
+    const total = (qty * price).toLocaleString('de-DE', { minimumFractionDigits:2 });
+    totalEl.textContent = `€${total}`;
+  });
+
+  function openModal(action) {
+    tradeAction = action;
+    const shortId   = getCurrentShortId();
+    const price     = getCurrentPrice();
+    const portfolio = getPortfolio();
+    const holding   = portfolio[shortId] || { shares: 0, avgPrice: price };
+    const name      = document.getElementById('detail-stock-name')?.textContent ?? shortId;
+
+    /* Fill modal content */
+    document.getElementById('modal-title').textContent     = action === 'buy' ? '🟢 Buy Shares' : '🔴 Sell Shares';
+    document.getElementById('modal-badge').textContent     = shortId;
+    document.getElementById('modal-stock-name').textContent = name;
+    document.getElementById('modal-stock-price').textContent = sessionStorage.getItem('pt_selected_symbol') ?? 'ENR.DE';
+    document.getElementById('modal-price-badge').textContent = `€${price.toFixed(2)}`;
+    document.getElementById('modal-current-shares').textContent = holding.shares;
+    document.getElementById('modal-avg-cost').textContent  = `€${holding.avgPrice.toFixed(2)}`;
+
+    /* Style confirm button based on action */
+    confirmBtn.textContent           = action === 'buy' ? 'Confirm Buy' : 'Confirm Sell';
+    confirmBtn.style.background      = action === 'buy' ? 'var(--accent)' : '#ef4444';
+    confirmBtn.style.color           = action === 'buy' ? '#0d1a0d' : '#fff';
+
+    /* Reset qty and total */
+    qtyInput.value     = '1';
+    totalEl.textContent = `€${price.toFixed(2)}`;
+
+    /* Show current cash balance in modal */
+    const cash    = PT.getCash();
+    const cashEl  = document.getElementById('modal-cash-balance');
+    if (cashEl) cashEl.textContent = '€' + cash.toLocaleString('de-DE', { minimumFractionDigits:2 });
+
+    /* Show modal */
+    overlay.style.display = 'flex';
+    qtyInput.focus();
+  }
+
+  function closeModal() {
+    overlay.style.display = 'none';
+    qtyInput.value = '1';
+  }
+
+  /* Button listeners */
+  document.getElementById('btn-buy').addEventListener('click',  () => openModal('buy'));
+  document.getElementById('btn-sell').addEventListener('click', () => openModal('sell'));
+
+  /* Confirm trade */
+  confirmBtn.addEventListener('click', function () {
+    const qty = parseInt(qtyInput.value);
+    if (!qty || qty < 1) {
+      showToast('✗ Enter a valid quantity', false);
+      return;
+    }
+    const success = executeTrade(tradeAction, qty);
+    if (success) closeModal();
+  });
+
+  /* Close on X button or backdrop click */
+  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  /* Confirm on Enter key */
+  qtyInput.addEventListener('keydown', e => { if (e.key === 'Enter') confirmBtn.click(); });
+
+  /* ── PRICE CACHE ──────────────────────────────────────────
+     FIX (root cause): this used to be an IIFE that ran here,
+     synchronously, at page-parse time — i.e. BEFORE the async
+     Finnhub fetch in main.js had resolved. It read getCurrentPrice(),
+     which at that moment could only see the static "€18.24" HTML
+     placeholder, and wrote that fake price into pt_price_cache for
+     whatever symbol was selected — on every single page load.
+     That's what corrupted the price cache and broke the portfolio
+     total downstream. The real price is now cached exactly once,
+     the instant it's actually known, inside updateStockUI() in
+     js/main.js via PT.setPrice(). Nothing needs to happen here. */
+
+  /* ── SEED LIVE CASH INDICATOR ON LOAD (Bug 3) ───────────────
+     recalcPortfolioBalance only runs during a trade, so without
+     this the chip would stay blank until the first buy/sell.
+     Same €/de-DE formatting used everywhere else for consistency. */
+  (function seedCashIndicator() {
+    const cash   = PT.getCash();
+    const cashEl = document.getElementById('available-cash');
+    if (cashEl) {
+      cashEl.textContent = '€' + cash.toLocaleString('de-DE', { minimumFractionDigits: 2 });
+    }
+  })();
+
+  /* ── WATCHLIST BUTTON ────────────────────────────────────── */
+  var inWatchlist = false;
+  document.getElementById('btn-watchlist').addEventListener('click', function () {
+    inWatchlist = !inWatchlist;
+    this.innerHTML = inWatchlist
+      ? '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> In Watchlist'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Add to Watchlist';
+    this.style.color       = inWatchlist ? 'var(--accent)' : '';
+    this.style.borderColor = inWatchlist ? 'var(--accent)' : '';
+    const name = document.getElementById('detail-stock-name')?.textContent ?? 'Stock';
+    showToast(inWatchlist ? `★ ${name} added to watchlist` : `${name} removed from watchlist`, inWatchlist);
+  });
+</script>
+
+</body>
+</html>

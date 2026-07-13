@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseTrade — Portfolio</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* ── PORTFOLIO TOP GRID: balance card + allocation donut ─ */
+    .portfolio-top {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+    }
+    @media (max-width: 992px) { .portfolio-top { grid-template-columns: 1fr; } }
+
+    /* Balance hero card */
+    .balance-hero-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+    }
+    .balance-hero-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--sp-sm);
+    }
+    .balance-hero-amount {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: var(--sp-sm);
+    }
+    .balance-hero-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .change-arrow {
+      width: 18px; height: 18px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .change-arrow svg { width: 10px; height: 10px; color: #0d1a0d; }
+
+    /* Holdings / Watchlist / Crypto tab buttons */
+    .portfolio-tabs { display: flex; gap: var(--sp-sm); margin-top: var(--sp-lg); flex-wrap: wrap; }
+    .portfolio-tab-btn {
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+    }
+    .portfolio-tab-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    .portfolio-tab-btn:hover:not(.active) { background: var(--bg-elevated); color: var(--text-primary); }
+
+    /* Allocation card */
+    .allocation-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-lg);
+      display: flex; flex-direction: column;
+    }
+    .allocation-title {
+      font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--sp-md);
+    }
+    .allocation-body { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-md); flex: 1; }
+    .allocation-legend { flex: 1; }
+    .alloc-row-detail { display: flex; align-items: center; gap: var(--sp-sm); margin-bottom: 10px; font-size: 0.82rem; }
+    .alloc-dot-detail { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .alloc-label-detail { flex: 1; color: var(--text-secondary); }
+    .alloc-pct-detail { font-weight: 700; color: var(--text-primary); min-width: 36px; text-align: right; }
+    .allocation-donut { width: 130px; height: 130px; flex-shrink: 0; }
+
+    /* Holdings table */
+    .holdings-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .holdings-header {
+      display: grid;
+      grid-template-columns: 48px 1fr 80px 130px 90px;
+      gap: var(--sp-md);
+      padding: 12px var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .holding-data-row {
+      display: grid;
+      grid-template-columns: 48px 1fr 80px 130px 90px;
+      gap: var(--sp-md);
+      align-items: center;
+      padding: 14px var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background var(--transition);
+      text-decoration: none; color: inherit;
+    }
+    .holding-data-row:last-child { border-bottom: none; }
+    .holding-data-row:hover { background: var(--bg-elevated); opacity: 1; }
+    @media (max-width: 768px) {
+      .holdings-header, .holding-data-row { grid-template-columns: 40px 1fr 100px 70px; }
+      .col-shares { display: none; }
+    }
+    .row-badge { width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.02em; }
+    .row-stock-name { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+    .row-stock-ticker { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
+    .row-shares { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); text-align: right; }
+    .row-value { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); text-align: right; }
+    .row-change { font-size: 0.85rem; font-weight: 700; text-align: right; }
+
+    /* Watchlist + Crypto */
+    .watchlist-card, .crypto-card {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .crypto-row {
+      display: flex; align-items: center; gap: var(--sp-md);
+      padding: 14px var(--sp-lg); border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    .crypto-row:last-child { border-bottom: none; }
+    .crypto-row:hover { background: var(--bg-elevated); }
+    .crypto-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0; }
+    .crypto-name-block { flex: 1; }
+    .crypto-name { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+    .crypto-code { font-size: 0.72rem; color: var(--text-secondary); }
+    .crypto-price { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); text-align: right; }
+    .crypto-change { font-size: 0.78rem; font-weight: 600; text-align: right; margin-top: 2px; }
+
+    /* Tab panels */
+    .portfolio-panel { display: none; }
+    .portfolio-panel.active { display: block; }
+
+    /* Summary stats */
+    .summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-md); margin-bottom: var(--sp-lg); }
+    .summary-stat-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-md); text-align: center; }
+    .summary-stat-label { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .summary-stat-value { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+    @media (max-width: 576px) {
+      .summary-stats { grid-template-columns: 1fr; }
+      .balance-hero-amount { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <span class="logo-text">PulseTrade</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="home.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+      </a>
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Markets
+      </a>
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"></path>
+          <path d="M16 2v4"></path><path d="M8 2v4"></path>
+          <line x1="3" y1="10" x2="17" y2="10"></line>
+        </svg>
+        News
+      </a>
+      <!-- Portfolio — active state set automatically by main.js -->
+      <a href="portfolio.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+        Portfolio
+      </a>
+      <a href="pro-plan.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Pro Plan
+      </a>
+      <a href="settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="index.html" class="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+  <main class="main-content">
+
+    <button class="mobile-menu-btn mb-3" id="mobile-menu-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6"  x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h1>Portfolio</h1>
+        <p>Track holdings, watchlist and crypto allocation.</p>
+      </div>
+      <!-- Clears pt_portfolio / pt_cash_balance / pt_price_cache / pt_portfolio_total
+           back to defaults (wired up in js/main.js) so a clean demo is one click away. -->
+      <button class="btn-danger" id="btn-reset-simulation" style="width:auto;padding:10px 20px;font-size:0.82rem;white-space:nowrap;">
+        Reset Simulation
+      </button>
+    </div>
+
+    <!-- TOP: balance + allocation -->
+    <div class="portfolio-top">
+
+      <!-- Balance Hero -->
+      <div class="balance-hero-card">
+        <div class="balance-hero-label">Total Balance</div>
+        <!--
+          id="total-balance" ← main.js updates this with live data.
+          The fallback value shown here is the sum of mock holdings.
+          It will be replaced by real API data when key is set.
+        -->
+        <div class="balance-hero-amount" id="total-balance">€31,061.89</div>
+
+        <!-- FIX: this element existed only inside the buy/sell modal on
+             stock-detail.html. Cash was changing correctly on every trade,
+             it just had nowhere visible to show up on the portfolio page —
+             which is exactly what made trades look like they "did nothing"
+             to the balance. Same id, same update logic, now visible here too. -->
+        <div class="balance-hero-label mt-sm" style="opacity:0.7;">
+          Available Cash: <span id="available-cash" style="color:var(--text-primary);font-weight:600;">€50.000,00</span>
+        </div>
+
+        <div class="balance-hero-change positive mt-sm">
+          <div class="change-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+          </div>
+          <span id="total-change-text">+5.23% Today</span>
+        </div>
+
+        <!-- Tab buttons -->
+        <div class="portfolio-tabs" id="portfolio-tabs">
+          <button class="portfolio-tab-btn active" data-ptab="holdings">Holdings</button>
+          <button class="portfolio-tab-btn"        data-ptab="watchlist">Watchlist</button>
+          <button class="portfolio-tab-btn"        data-ptab="crypto">Crypto</button>
+        </div>
+      </div>
+
+      <!-- Allocation Donut -->
+      <div class="allocation-card">
+        <div class="allocation-title">Allocation</div>
+        <div class="allocation-body">
+          <div class="allocation-legend">
+            <div class="alloc-row-detail"><div class="alloc-dot-detail" style="background:#4ade80;"></div><span class="alloc-label-detail">Stocks</span><span class="alloc-pct-detail">72%</span></div>
+            <div class="alloc-row-detail"><div class="alloc-dot-detail" style="background:#60a5fa;"></div><span class="alloc-label-detail">Bonds</span><span class="alloc-pct-detail">15%</span></div>
+            <div class="alloc-row-detail"><div class="alloc-dot-detail" style="background:#fb923c;"></div><span class="alloc-label-detail">Cash</span><span class="alloc-pct-detail">8%</span></div>
+            <div class="alloc-row-detail"><div class="alloc-dot-detail" style="background:#a78bfa;"></div><span class="alloc-label-detail">Crypto</span><span class="alloc-pct-detail">5%</span></div>
+          </div>
+          <canvas class="allocation-donut" id="chart-allocation" aria-label="Portfolio allocation donut chart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Summary stats -->
+    <div class="summary-stats">
+      <div class="summary-stat-card">
+        <div class="summary-stat-label">Total Invested</div>
+        <div class="summary-stat-value" id="stat-invested">€108,200.00</div>
+      </div>
+      <div class="summary-stat-card">
+        <div class="summary-stat-label">Total Profit</div>
+        <div class="summary-stat-value positive" id="stat-profit">+€16,620.50</div>
+      </div>
+      <div class="summary-stat-card">
+        <div class="summary-stat-label">Open Positions</div>
+        <div class="summary-stat-value" id="stat-positions">5</div>
+      </div>
+    </div>
+
+    <!-- ── TAB PANELS ─────────────────────────────────────── -->
+
+    <!-- HOLDINGS (default) -->
+    <div class="portfolio-panel active" id="ptab-holdings">
+      <div class="holdings-card">
+        <div class="holdings-header">
+          <div></div>
+          <div>Asset</div>
+          <div class="col-shares" style="text-align:right;">Shares</div>
+          <div style="text-align:right;">Value</div>
+          <div style="text-align:right;">Change</div>
+        </div>
+
+        <!-- Siemens Energy: 120 × €18.24 -->
+        <a href="stock-detail.html" class="holding-data-row">
+          <div class="row-badge badge-sie">SIE</div>
+          <div><div class="row-stock-name">Siemens Energy</div><div class="row-stock-ticker">ENR.DE</div></div>
+          <div class="row-shares col-shares" id="shares-SIE">120</div>
+          <div class="row-value"  id="value-SIE">€2,188.80</div>
+          <div class="row-change positive" id="rowchange-SIE">+2.34%</div>
+        </a>
+
+        <!-- SAP SE: 80 × €213.65 -->
+        <a href="stock-detail.html" class="holding-data-row">
+          <div class="row-badge badge-sap">SAP</div>
+          <div><div class="row-stock-name">SAP SE</div><div class="row-stock-ticker">SAP.DE</div></div>
+          <div class="row-shares col-shares" id="shares-SAP">80</div>
+          <div class="row-value"  id="value-SAP">€17,092.00</div>
+          <div class="row-change positive" id="rowchange-SAP">+1.85%</div>
+        </a>
+
+        <!-- Tesla: 10 × $178.24 -->
+        <a href="stock-detail.html" class="holding-data-row">
+          <div class="row-badge badge-tsla">TSLA</div>
+          <div><div class="row-stock-name">Tesla Inc.</div><div class="row-stock-ticker">TSLA</div></div>
+          <div class="row-shares col-shares" id="shares-TSLA">10</div>
+          <div class="row-value"  id="value-TSLA">€1,782.40</div>
+          <div class="row-change negative" id="rowchange-TSLA">-1.23%</div>
+        </a>
+
+        <!-- NVIDIA: 15 × $987.54 -->
+        <a href="stock-detail.html" class="holding-data-row">
+          <div class="row-badge badge-nvda">NVDA</div>
+          <div><div class="row-stock-name">NVIDIA Corp.</div><div class="row-stock-ticker">NVDA</div></div>
+          <div class="row-shares col-shares" id="shares-NVDA">15</div>
+          <div class="row-value"  id="value-NVDA">€9,875.40</div>
+          <div class="row-change positive" id="rowchange-NVDA">+3.45%</div>
+        </a>
+
+        <!-- Apple: 8 × $212.35 -->
+        <a href="stock-detail.html" class="holding-data-row">
+          <div class="row-badge badge-aapl">AAPL</div>
+          <div><div class="row-stock-name">Apple Inc.</div><div class="row-stock-ticker">AAPL</div></div>
+          <div class="row-shares col-shares" id="shares-AAPL">8</div>
+          <div class="row-value"  id="value-AAPL">€1,123.50</div>
+          <div class="row-change positive" id="rowchange-AAPL">+1.12%</div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- WATCHLIST -->
+    <div class="portfolio-panel" id="ptab-watchlist">
+      <div class="watchlist-card">
+        <a href="stock-detail.html" class="stock-item">
+          <div class="ticker-badge badge-sie">SIE</div>
+          <div class="stock-info"><div class="stock-name">Siemens Energy</div><div class="stock-ticker">ENR.DE · Target: €22.00</div></div>
+          <canvas class="sparkline" id="wspark-SIE"></canvas>
+          <div class="stock-price-block">
+            <div class="stock-price positive" id="wprice-SIE">€18.24</div>
+            <div class="stock-change positive" id="wchange-SIE">+2.34%</div>
+          </div>
+          <button class="icon-btn ms-2" onclick="event.preventDefault();this.closest('.stock-item').remove();" style="width:28px;height:28px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:#ef4444;">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </a>
+        <a href="stock-detail.html" class="stock-item">
+          <div class="ticker-badge badge-nvda">NVDA</div>
+          <div class="stock-info"><div class="stock-name">NVIDIA Corp.</div><div class="stock-ticker">NVDA · Target: $1,100.00</div></div>
+          <canvas class="sparkline" id="wspark-NVDA"></canvas>
+          <div class="stock-price-block">
+            <div class="stock-price" id="wprice-NVDA">$987.54</div>
+            <div class="stock-change positive" id="wchange-NVDA">+3.45%</div>
+          </div>
+          <button class="icon-btn ms-2" onclick="event.preventDefault();this.closest('.stock-item').remove();" style="width:28px;height:28px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:#ef4444;">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </a>
+        <div style="padding:var(--sp-md); border-top:1px solid var(--border);">
+          <button class="btn-outline w-100" id="btn-add-watchlist">+ Add Stock to Watchlist</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRYPTO -->
+    <div class="portfolio-panel" id="ptab-crypto">
+      <div class="crypto-card">
+        <div class="crypto-row">
+          <div class="crypto-icon" style="background:#f7931a22;color:#f7931a;">BTC</div>
+          <div class="crypto-name-block"><div class="crypto-name">Bitcoin</div><div class="crypto-code">BTC · 0.042 BTC</div></div>
+          <canvas class="sparkline" id="cspark-BTC" style="width:70px;height:32px;"></canvas>
+          <div><div class="crypto-price" id="cprice-BTC">$62,840.00</div><div class="crypto-change positive" id="cchange-BTC">+3.12%</div></div>
+        </div>
+        <div class="crypto-row">
+          <div class="crypto-icon" style="background:#627eea22;color:#627eea;">ETH</div>
+          <div class="crypto-name-block"><div class="crypto-name">Ethereum</div><div class="crypto-code">ETH · 1.5 ETH</div></div>
+          <canvas class="sparkline" id="cspark-ETH" style="width:70px;height:32px;"></canvas>
+          <div><div class="crypto-price" id="cprice-ETH">$3,480.00</div><div class="crypto-change negative" id="cchange-ETH">-0.87%</div></div>
+        </div>
+        <div class="crypto-row">
+          <div class="crypto-icon" style="background:#26a17b22;color:#26a17b;">USDT</div>
+          <div class="crypto-name-block"><div class="crypto-name">Tether</div><div class="crypto-code">USDT · 500 USDT</div></div>
+          <canvas class="sparkline" id="cspark-USDT" style="width:70px;height:32px;"></canvas>
+          <div><div class="crypto-price" id="cprice-USDT">$1.00</div><div class="crypto-change positive" id="cchange-USDT">+0.01%</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!--
+  SCRIPT LOADING ORDER — this matters:
+  1. Bootstrap JS  (needed for any BS components)
+  2. Chart.js      (needed before main.js draws charts)
+  3. main.js       (our code — runs LAST, after all libs are ready)
+
+  main.js detects this page via id="total-balance" and runs:
+  - calculatePortfolioFromDOM() if no API key set (always works)
+  - loadAllLivePrices() if API key is set (replaces with real data)
+-->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+  /* -- TAB SWITCHING -- */
+  var ptabBtns   = document.querySelectorAll("#portfolio-tabs .portfolio-tab-btn");
+  var ptabPanels = document.querySelectorAll(".portfolio-panel");
+  ptabBtns.forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      ptabBtns.forEach(function(b) { b.classList.remove("active"); });
+      ptabPanels.forEach(function(p) { p.classList.remove("active"); });
+      this.classList.add("active");
+      document.getElementById("ptab-" + this.getAttribute("data-ptab")).classList.add("active");
+    });
+  });
+
+  /* THE ONLY FUNCTION THAT CONTROLS THE BALANCE.
+     Delegates to PT.recomputeTotal() (js/main.js) — the single
+     source of truth for "total = holdings + cash" — instead of
+     keeping its own copy of that formula. Called at 0ms (immediate,
+     paints from whatever is cached) and again after loadAllLivePrices()
+     finishes fetching real prices (see the DOMContentLoaded hook below),
+     so the two never race with two different numbers. */
+  function refreshPortfolioFromTrades() {
+    if (!sessionStorage.getItem("pt_portfolio")) return;
+
+    const { total, cash, portfolio, priceCache } = PT.recomputeTotal();
+
+    Object.keys(portfolio).forEach(function (id) {
+      var holding  = portfolio[id];
+      var shares   = Number(holding.shares) || 0;
+      var price    = Number(priceCache[id]) || Number(MOCK_MARKET_PRICES[id]) || Number(holding.avgPrice) || 0;
+      var value    = parseFloat((shares * price).toFixed(2));
+
+      var sharesEl = document.getElementById("shares-" + id);
+      var valueEl  = document.getElementById("value-"  + id);
+      if (sharesEl) sharesEl.textContent = shares;
+      if (valueEl && price > 0) {
+        valueEl.textContent = "€" + value.toLocaleString("de-DE", {minimumFractionDigits:2, maximumFractionDigits:2});
+      }
+      var rowEl = document.getElementById("rowchange-" + id);
+      if (rowEl) {
+        var row = rowEl.closest(".holding-data-row");
+        if (row) row.style.opacity = shares === 0 ? "0.35" : "1";
+      }
+    });
+
+    var el = document.getElementById("total-balance");
+    if (el) el.textContent = "€" + total.toLocaleString("de-DE", {minimumFractionDigits:2});
+
+    var cashEl = document.getElementById("available-cash");
+    if (cashEl) cashEl.textContent = "€" + cash.toLocaleString("de-DE", {minimumFractionDigits:2});
+  }
+
+  refreshPortfolioFromTrades();
+
+  /* Re-render once loadAllLivePrices() (triggered by main.js on this
+     page, since #total-balance exists) has finished writing real
+     Finnhub prices into PT's price cache — so the final numbers are
+     always the freshest ones, computed by the same single formula. */
+  window.addEventListener("pt-live-prices-loaded", refreshPortfolioFromTrades);
+
+  /* -- DONUT CHART -- */
+  new Chart(document.getElementById("chart-allocation"), {
+    type: "doughnut",
+    data: { labels: ["Stocks","Bonds","Cash","Crypto"], datasets: [{ data:[72,15,8,5], backgroundColor:["#4ade80","#60a5fa","#fb923c","#a78bfa"], borderWidth:0 }] },
+    options: { responsive:false, cutout:"70%", plugins:{ legend:{display:false} } }
+  });
+
+  /* -- SPARKLINES -- */
+  function drawSparkline(id, pts, pos) {
+    var c = document.getElementById(id);
+    if (!c || typeof Chart === "undefined") return;
+    new Chart(c, { type:"line", data:{ labels:pts.map(function(_,i){return i;}), datasets:[{ data:pts, borderColor:pos?"#4ade80":"#ef4444", borderWidth:1.5, fill:false, tension:0.4, pointRadius:0 }] }, options:{ responsive:false, animation:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} } });
+  }
+  drawSparkline("wspark-SIE",  [17.6,17.8,17.9,18.1,18.24], true);
+  drawSparkline("wspark-NVDA", [953,965,975,983,987.54],     true);
+  drawSparkline("cspark-BTC",  [60200,61000,61800,62400,62840], true);
+  drawSparkline("cspark-ETH",  [3550,3520,3500,3490,3480],   false);
+  drawSparkline("cspark-USDT", [1,1,1,1,1],                  true);
+
+  /* -- WATCHLIST ADD -- */
+  document.getElementById("btn-add-watchlist").addEventListener("click", function() {
+    var t = prompt("Enter ticker (e.g. AAPL):");
+    if (t && t.trim()) alert(t.trim().toUpperCase() + " added to watchlist!");
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseTrade — Settings</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+
+  <!-- Our global design system -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* --------------------------------------------------------
+       SETTINGS PAGE — specific styles
+       Layout:
+         LEFT  → Preferences card (toggles + dropdowns)
+                 + Exam Requirement Checklist card
+         RIGHT → Tech Stack card + Project Readiness card
+    -------------------------------------------------------- */
+
+    /* Two-column grid */
+    .settings-layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: var(--sp-lg);
+      align-items: start;
+    }
+    @media (max-width: 992px) {
+      .settings-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── PREFERENCES CARD ─────────────────────────────────── */
+    .pref-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      margin-bottom: var(--sp-lg);
+    }
+    .pref-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--sp-lg);
+    }
+
+    /* Each preference row: label+desc on left, control on right */
+    .pref-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-md);
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .pref-row:last-child { border-bottom: none; }
+    .pref-row-body { flex: 1; }
+    .pref-row-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+    .pref-row-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── EXAM CHECKLIST CARD ──────────────────────────────── */
+    .checklist-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .checklist-card-header {
+      padding: var(--sp-md) var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Each checklist row */
+    .req-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-md);
+      padding: 14px var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+    }
+    .req-item:last-child { border-bottom: none; }
+
+    /* Colored label badge: M1, M2, M3… */
+    .req-badge {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: #0d1a0d;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+    .req-body { flex: 1; }
+    .req-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .req-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+    /* Green check on the right */
+    .req-check {
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .req-check svg {
+      width: 20px;
+      height: 20px;
+      color: var(--accent);
+    }
+
+    /* ── TECH STACK CARD ──────────────────────────────────── */
+    .tech-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      margin-bottom: var(--sp-lg);
+    }
+    .tech-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--sp-lg);
+    }
+
+    /* Tech item row */
+    .tech-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tech-item:last-child { border-bottom: none; }
+    .tech-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-bg);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .tech-icon svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+    }
+    .tech-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .tech-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* ── PROJECT READINESS CARD ───────────────────────────── */
+    .readiness-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .readiness-card-header {
+      padding: var(--sp-md) var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Each readiness row */
+    .readiness-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--sp-md);
+      padding: 14px var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+    }
+    .readiness-item:last-child { border-bottom: none; }
+    .readiness-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-bg);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .readiness-icon svg {
+      width: 16px;
+      height: 16px;
+      color: var(--accent);
+    }
+    .readiness-body { flex: 1; min-width: 0; }
+    .readiness-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .readiness-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+    /* Status label on right: "Marketstack-ready", "Responsive" etc. */
+    .readiness-status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── ACCOUNT SECTION ──────────────────────────────────── */
+    .account-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      margin-top: var(--sp-lg);
+    }
+
+    /* Save Settings button feedback states */
+    #btn-save-settings {
+      transition: background var(--transition), color var(--transition);
+    }
+    #btn-save-settings.saved {
+      background: var(--bg-elevated);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <span class="logo-text">PulseTrade</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="home.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+      </a>
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Markets
+      </a>
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"></path>
+          <path d="M16 2v4"></path><path d="M8 2v4"></path>
+          <line x1="3" y1="10" x2="17" y2="10"></line>
+        </svg>
+        News
+      </a>
+      <a href="portfolio.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8"  y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+        Portfolio
+      </a>
+      <a href="pro-plan.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Pro Plan
+      </a>
+
+      <!-- Settings — ACTIVE -->
+      <a href="settings.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="index.html" class="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Mobile hamburger -->
+    <button class="mobile-menu-btn mb-3" id="mobile-menu-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6"  x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <h1>Settings</h1>
+      <p>Location, currency, alerts and account preferences.</p>
+    </div>
+
+    <div class="settings-layout">
+
+      <!-- ── LEFT COLUMN ──────────────────────────────────── -->
+      <div>
+
+        <!-- Preferences Card -->
+        <div class="pref-card">
+          <div class="pref-title">Preferences</div>
+
+          <!-- Dark Mode Toggle -->
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Dark mode</div>
+              <div class="pref-row-desc">Consistent dark theme for mobile and web</div>
+            </div>
+            <!-- Toggle switch — always ON since our app is dark-only -->
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-darkmode" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Price Alerts Toggle -->
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Price alerts</div>
+              <div class="pref-row-desc">Notify when watched stocks move</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-alerts" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Geolocation Toggle -->
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Auto-detect location</div>
+              <div class="pref-row-desc">Use Geolocation API to set market country</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-geo" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Market Country Selector -->
+          <div class="pref-row" style="flex-direction:column; align-items:flex-start; gap:var(--sp-sm);">
+            <div class="pref-row-body" style="width:100%;">
+              <div class="pref-row-label">Market country</div>
+              <div class="pref-row-desc mb-2">Select your primary stock market region</div>
+              <!--
+                id="select-country" — JS reads this value when
+                deciding which market snapshot to show on home.html
+              -->
+              <select class="select-dark" id="select-country">
+                <option value="DE" selected>Germany</option>
+                <option value="US">United States</option>
+                <option value="GB">United Kingdom</option>
+                <option value="TR">Turkey</option>
+                <option value="FR">France</option>
+                <option value="JP">Japan</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Currency Selector -->
+          <div class="pref-row" style="flex-direction:column; align-items:flex-start; gap:var(--sp-sm);">
+            <div class="pref-row-body" style="width:100%;">
+              <div class="pref-row-label">Currency</div>
+              <div class="pref-row-desc mb-2">All prices will be shown in this currency</div>
+              <select class="select-dark" id="select-currency">
+                <option value="EUR" selected>EUR — Euro</option>
+                <option value="USD">USD — US Dollar</option>
+                <option value="GBP">GBP — British Pound</option>
+                <option value="TRY">TRY — Turkish Lira</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Detect Location Button -->
+          <div class="pref-row" style="border-bottom:none; padding-top:var(--sp-md);">
+            <button class="btn-outline" id="btn-detect-location" style="width:auto; padding:10px 20px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   style="width:16px;height:16px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8"  x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              Detect My Location
+            </button>
+            <!-- Result text shown after detection -->
+            <span id="location-result" style="font-size:0.82rem; color:var(--accent); margin-left:var(--sp-md);"></span>
+          </div>
+
+        </div>
+        <!-- end .pref-card -->
+
+        <!-- Save Settings Button -->
+        <button class="btn-primary mb-4" id="btn-save-settings">
+          Save Settings
+        </button>
+
+        <!-- ── ACCOUNT DETAILS CARD ──────────────────────── -->
+        <div class="pref-card mb-4">
+          <div class="pref-title">Account Details</div>
+
+          <div class="pref-row" style="align-items:flex-start;flex-direction:column;gap:var(--sp-sm);">
+            <div class="pref-row-label">Full Name</div>
+            <div style="display:flex;gap:var(--sp-sm);width:100%;align-items:center;">
+              <input type="text" class="form-control-dark" value="Demo Trader"
+                     id="account-name" style="padding-left:var(--sp-md);flex:1;" />
+              <button class="btn-outline" style="width:auto;padding:10px 18px;white-space:nowrap;">
+                Update
+              </button>
+            </div>
+          </div>
+
+          <div class="pref-row" style="align-items:flex-start;flex-direction:column;gap:var(--sp-sm);">
+            <div class="pref-row-label">Email Address</div>
+            <div style="display:flex;gap:var(--sp-sm);width:100%;align-items:center;">
+              <div class="input-wrapper" style="flex:1;">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,12 2,6"></polyline>
+                </svg>
+                <input type="email" class="form-control-dark" value="demo@pulsetrade.io" id="account-email" />
+              </div>
+              <button class="btn-outline" style="width:auto;padding:10px 18px;white-space:nowrap;">
+                Update
+              </button>
+            </div>
+          </div>
+
+          <div class="pref-row" style="align-items:flex-start;flex-direction:column;gap:var(--sp-sm);border-bottom:none;">
+            <div class="pref-row-label">Phone Number</div>
+            <div style="display:flex;gap:var(--sp-sm);width:100%;align-items:center;">
+              <input type="tel" class="form-control-dark" value="+49 170 123 4567"
+                     id="account-phone" style="padding-left:var(--sp-md);flex:1;" />
+              <button class="btn-outline" style="width:auto;padding:10px 18px;white-space:nowrap;">
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECURITY CARD ──────────────────────────────── -->
+        <div class="pref-card">
+          <div class="pref-title">Security</div>
+
+          <!-- 2FA Toggle -->
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Two-Factor Authentication</div>
+              <div class="pref-row-desc">Require a code from your authenticator app on login</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-2fa" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Session Notifications -->
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Login Notifications</div>
+              <div class="pref-row-desc">Email me when a new device signs in</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-login-notif" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <!-- Change Password -->
+          <div class="pref-row" style="flex-direction:column;align-items:flex-start;gap:var(--sp-sm);">
+            <div class="pref-row-label">Change Password</div>
+            <div class="input-wrapper w-100 mb-2">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input type="password" class="form-control-dark" placeholder="Current password" />
+            </div>
+            <div class="input-wrapper w-100 mb-2">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input type="password" class="form-control-dark" placeholder="New password" />
+            </div>
+            <div class="input-wrapper w-100">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input type="password" class="form-control-dark" placeholder="Confirm new password" />
+            </div>
+          </div>
+
+          <div class="pref-row" style="border-bottom:none;padding-top:var(--sp-md);">
+            <button class="btn-primary" style="width:auto;padding:10px 24px;">
+              Update Password
+            </button>
+            <span style="font-size:0.75rem;color:var(--text-tertiary);margin-left:var(--sp-md);">
+              Last changed 47 days ago
+            </span>
+          </div>
+        </div>
+
+      </div>
+      <!-- end left column -->
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M2 — Home page -->
+          <div class="req-item">
+            <div class="req-badge">M2</div>
+            <div class="req-body">
+              <div class="req-title">Home page</div>
+              <div class="req-desc">Portfolio balance, country-aware market snapshot, top movers and navigation.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M3 — Markets & News -->
+          <div class="req-item">
+            <div class="req-badge">M3</div>
+            <div class="req-body">
+              <div class="req-title">Markets &amp; News page</div>
+              <div class="req-desc">News snapshots, stock prices, country filters and positive/negative visual language.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M4 — Stock detail -->
+          <div class="req-item">
+            <div class="req-badge">M4</div>
+            <div class="req-body">
+              <div class="req-title">Stock detail page</div>
+              <div class="req-desc">Siemens Energy detail screen with chart, table metrics, statistics and company info.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M5 — Portfolio -->
+          <div class="req-item">
+            <div class="req-badge">M5</div>
+            <div class="req-body">
+              <div class="req-title">Portfolio page</div>
+              <div class="req-desc">Holdings table, values, change colors and allocation chart.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M6 — Pro Plan -->
+          <div class="req-item">
+            <div class="req-badge">M6</div>
+            <div class="req-body">
+              <div class="req-title">Pro plan page</div>
+              <div class="req-desc">Subscription page with premium features and upgrade call-to-action.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M7 — Settings -->
+          <div class="req-item">
+            <div class="req-badge">M7</div>
+            <div class="req-body">
+              <div class="req-title">Settings page</div>
+              <div class="req-desc">Country, currency, alerts and account mode preferences.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- M8 — Geolocation -->
+          <div class="req-item">
+            <div class="req-badge">M8</div>
+            <div class="req-body">
+              <div class="req-title">Geolocation API</div>
+              <div class="req-desc">User country auto-detected via browser Geolocation + BigDataCloud reverse geocoding.</div>
+            </div>
+            <div class="req-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+
+        </div>
+        <!-- end .checklist-card -->
+
+      </div>
+      <!-- end left column -->
+
+      <!-- ── RIGHT COLUMN ─────────────────────────────────── -->
+      <div>
+
+        <!-- Payment & Billing Card -->
+        <div class="pref-card mb-4">
+          <div class="pref-title">Payment &amp; Billing</div>
+
+          <!-- Active Plan Banner -->
+          <div style="background:var(--accent-bg);border:1px solid var(--border-accent);border-radius:var(--radius-md);padding:var(--sp-md);margin-bottom:var(--sp-lg);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:0.72rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Current Plan</div>
+              <div style="font-size:1rem;font-weight:800;color:var(--text-primary);">PulseTrade Pro</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:2px;">Renews on 01 Aug 2026 · €4.99/mo</div>
+            </div>
+            <span style="background:var(--accent);color:#000;font-size:0.68rem;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:0.06em;">ACTIVE</span>
+          </div>
+
+          <!-- Linked Cards -->
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:var(--sp-sm);">Linked Payment Methods</div>
+
+          <!-- Card 1 -->
+          <div style="display:flex;align-items:center;gap:var(--sp-md);padding:12px var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);margin-bottom:var(--sp-sm);border:1px solid var(--border);">
+            <div style="width:42px;height:28px;background:linear-gradient(135deg,#1a1f6e,#2b35c9);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span style="color:#fff;font-size:0.55rem;font-weight:900;letter-spacing:0.04em;">VISA</span>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">•••• •••• •••• 4291</div>
+              <div style="font-size:0.7rem;color:var(--text-secondary);">Expires 09/27 · Default</div>
+            </div>
+            <span style="font-size:0.65rem;background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:999px;font-weight:700;">DEFAULT</span>
+          </div>
+
+          <!-- Card 2 -->
+          <div style="display:flex;align-items:center;gap:var(--sp-md);padding:12px var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);margin-bottom:var(--sp-lg);border:1px solid var(--border);">
+            <div style="width:42px;height:28px;background:linear-gradient(135deg,#4a1a1a,#c93535);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span style="color:#fff;font-size:0.48rem;font-weight:900;letter-spacing:0.02em;">MASTER</span>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">•••• •••• •••• 8847</div>
+              <div style="font-size:0.7rem;color:var(--text-secondary);">Expires 02/26</div>
+            </div>
+            <button style="background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:0.72rem;padding:0;" onclick="this.closest('div[style]').remove()">Remove</button>
+          </div>
+
+          <!-- Linked Bank Account -->
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:var(--sp-sm);">Linked Bank Account</div>
+          <div style="display:flex;align-items:center;gap:var(--sp-md);padding:12px var(--sp-md);background:var(--bg-elevated);border-radius:var(--radius-md);margin-bottom:var(--sp-lg);border:1px solid var(--border);">
+            <div style="width:36px;height:36px;background:var(--accent-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--accent);">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <path d="M3 9h18"></path><path d="M9 21V9"></path>
+              </svg>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Deutsche Bank — DE89 3704 0044 0532</div>
+              <div style="font-size:0.7rem;color:var(--text-secondary);">IBAN linked · Verified ✓</div>
+            </div>
+          </div>
+
+          <button class="btn-outline w-100" style="font-size:0.82rem;">
+            + Add Payment Method
+          </button>
+        </div>
+
+        <!-- Notifications Card -->
+        <div class="pref-card mb-4">
+          <div class="pref-title">Notifications</div>
+
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Trade Confirmations</div>
+              <div class="pref-row-desc">Email on every buy / sell execution</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Price Alerts</div>
+              <div class="pref-row-desc">Push when watchlist stocks hit target</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-alerts" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <div class="pref-row">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Market Open / Close</div>
+              <div class="pref-row-desc">Remind me when XETRA session starts</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <div class="pref-row" style="border-bottom:none;">
+            <div class="pref-row-body">
+              <div class="pref-row-label">Weekly Portfolio Report</div>
+              <div class="pref-row-desc">PDF summary every Monday morning</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div style="background:var(--bg-surface);border:1px solid rgba(255,77,77,0.25);border-radius:var(--radius-lg);padding:var(--sp-lg);">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--negative);margin-bottom:var(--sp-sm);">Danger Zone</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:var(--sp-md);">
+            Permanently delete your account and all trading history. This cannot be undone.
+          </div>
+          <button class="btn-danger" style="width:auto;padding:10px 20px;font-size:0.82rem;">
+            Delete Account
+          </button>
+        </div>
+
+      </div>
+      <!-- end right column -->
+
+    </div>
+    <!-- end .settings-layout -->
+
+  </main>
+</div>
+<!-- end .app-shell -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+  /* ============================================================
+     SETTINGS PAGE — Inline JS
+     Handles:
+     1. Mobile sidebar toggle
+     2. Dark mode toggle (visual feedback only — app is always dark)
+     3. Save Settings — persists to sessionStorage
+     4. Detect Location button — calls main.js detectUserCountry()
+     5. Restore saved settings on page load
+  ============================================================ */
+
+  /* -- 1. MOBILE SIDEBAR -- (also handled by main.js globally) */
+
+  /* -- 2. DARK MODE TOGGLE --
+     Our app is always dark, but we give visual feedback.
+     If the user turns it "off", show a warning.
+  */
+  document.getElementById('toggle-darkmode').addEventListener('change', function () {
+    if (!this.checked) {
+      /* Re-check it after a brief moment — dark mode is permanent */
+      var toggle = this;
+      setTimeout(function () {
+        toggle.checked = true;
+        alert('PulseTrade is designed as a dark-mode app.\nLight mode is not available in this version.');
+      }, 200);
+    }
+  });
+
+  /* -- 3. SAVE SETTINGS --
+     Reads all preference values and stores them in sessionStorage.
+     The key 'pt_settings' holds a JSON string.
+  */
+  document.getElementById('btn-save-settings').addEventListener('click', function () {
+    /* Collect all preference values from the form controls */
+    var settings = {
+      darkMode:    document.getElementById('toggle-darkmode').checked,
+      alerts:      document.getElementById('toggle-alerts').checked,
+      geoEnabled:  document.getElementById('toggle-geo').checked,
+      country:     document.getElementById('select-country').value,
+      currency:    document.getElementById('select-currency').value,
+      savedAt:     new Date().toISOString()
+    };
+
+    /* Save to sessionStorage as a JSON string */
+    sessionStorage.setItem('pt_settings', JSON.stringify(settings));
+
+    /* Visual feedback — change button appearance temporarily */
+    var btn = this;
+    btn.textContent = '✓ Settings Saved';
+    btn.classList.add('saved');
+
+    /* Reset button after 2 seconds */
+    setTimeout(function () {
+      btn.textContent = 'Save Settings';
+      btn.classList.remove('saved');
+    }, 2000);
+  });
+
+  /* -- 4. DETECT LOCATION BUTTON --
+     Calls the detectUserCountry() function from main.js.
+     Updates the country dropdown with the detected country code.
+  */
+  document.getElementById('btn-detect-location').addEventListener('click', function () {
+    var resultEl = document.getElementById('location-result');
+    resultEl.textContent = 'Detecting...';
+
+    /* detectUserCountry is defined in main.js */
+    detectUserCountry(function (countryName, countryCode) {
+      /* Update the country dropdown if the detected country is in our list */
+      var select = document.getElementById('select-country');
+      var option = select.querySelector('option[value="' + countryCode + '"]');
+
+      if (option) {
+        select.value = countryCode;
+        resultEl.textContent = '✓ Detected: ' + countryName;
+      } else {
+        /* Country not in our list — show it but don't change select */
+        resultEl.textContent = '📍 ' + countryName + ' (not in supported list)';
+      }
+    });
+  });
+
+  /* -- 5. RESTORE SAVED SETTINGS ON PAGE LOAD --
+     When the settings page loads, read from sessionStorage
+     and pre-fill all controls with the previously saved values.
+  */
+  (function restoreSettings() {
+    var raw = sessionStorage.getItem('pt_settings');
+    if (!raw) return; /* No saved settings yet — use defaults */
+
+    try {
+      var settings = JSON.parse(raw);
+
+      /* Restore toggles */
+      if (typeof settings.alerts     !== 'undefined')
+        document.getElementById('toggle-alerts').checked = settings.alerts;
+      if (typeof settings.geoEnabled !== 'undefined')
+        document.getElementById('toggle-geo').checked    = settings.geoEnabled;
+
+      /* Restore dropdowns */
+      if (settings.country)
+        document.getElementById('select-country').value  = settings.country;
+      if (settings.currency)
+        document.getElementById('select-currency').value = settings.currency;
+
+    } catch (e) {
+      /* If JSON.parse fails, silently ignore and use defaults */
+      console.warn('Could not parse saved settings:', e);
+    }
+  })();
+</script>
+
+</body>
+</html>

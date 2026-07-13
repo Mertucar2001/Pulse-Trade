@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseTrade — Home</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+
+  <!-- Our global design system -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* --------------------------------------------------------
+       HOME PAGE — specific layout styles
+       The page uses a two-column layout:
+       LEFT  → portfolio balance + top movers + index cards
+       RIGHT → markets supported + portfolio donut + sentiment
+    -------------------------------------------------------- */
+
+    /* Topbar: "Welcome Back" heading + bell icon — flex row */
+    .home-topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--sp-xl);
+    }
+
+    /* Portfolio balance card — the large green number */
+    .balance-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      margin-bottom: var(--sp-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-lg);
+    }
+    .balance-card-left { flex: 1; }
+    .balance-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--sp-sm);
+    }
+
+    /* "Top Movers" section header with "View all" link */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--sp-md);
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .view-all-link {
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .view-all-link:hover { text-decoration: underline; opacity: 1; }
+
+    /* The card wrapping the top movers list */
+    .movers-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden; /* Keeps rounded corners on child rows */
+      margin-bottom: var(--sp-lg);
+    }
+
+    /* Arrow chevron on each mover row */
+    .mover-arrow {
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+    }
+    .mover-arrow svg { width: 14px; height: 14px; }
+
+    /* Index cards row (DAX, Dow Jones, NASDAQ) at page bottom */
+    .index-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--sp-md);
+    }
+    @media (max-width: 576px) {
+      .index-row { grid-template-columns: 1fr; }
+    }
+
+    /* Right sidebar panel — fixed width column */
+    .right-panel {
+      width: 340px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-md);
+    }
+    @media (max-width: 992px) {
+      .right-panel { width: 100%; }
+    }
+
+    /* "Markets Supported" globe icon */
+    .markets-globe {
+      width: 28px;
+      height: 28px;
+      color: var(--accent);
+    }
+
+    /* Portfolio Performance legend + donut side by side */
+    .perf-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-md);
+    }
+    .perf-legend { flex: 1; }
+
+    /* Market sentiment card — bullish percentage */
+    .sentiment-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-md);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+    }
+    .sentiment-chart-area {
+      flex: 1;
+      height: 60px;
+    }
+    .sentiment-right { text-align: right; }
+
+    /* Two-column page layout wrapper */
+    .page-layout {
+      display: flex;
+      gap: var(--sp-lg);
+      align-items: flex-start;
+    }
+    .page-main { flex: 1; min-width: 0; }
+
+    @media (max-width: 992px) {
+      .page-layout { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     APP SHELL — sidebar + main content
+     This same structure is copy-pasted on every page.
+     Only the <main> content area changes per page.
+============================================================ -->
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <span class="logo-text">PulseTrade</span>
+      <span class="logo-version">PRO</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+
+      <div class="nav-section-label">Overview</div>
+
+      <a href="home.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+        Dashboard
+      </a>
+
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Markets
+      </a>
+
+      <div class="nav-section-label">Trading</div>
+
+      <a href="stock-detail.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+        </svg>
+        Trade / Exchange
+      </a>
+
+      <a href="portfolio.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        Portfolio
+      </a>
+
+      <a href="portfolio.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+        </svg>
+        Watchlist
+        <span class="nav-badge">3</span>
+      </a>
+
+      <div class="nav-section-label">Research</div>
+
+      <a href="markets.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"></path>
+          <path d="M16 2v4"></path><path d="M8 2v4"></path>
+          <line x1="3" y1="10" x2="17" y2="10"></line>
+        </svg>
+        News &amp; Analytics
+        <span class="nav-badge-new">NEW</span>
+      </a>
+
+      <div class="nav-section-label">Account</div>
+
+      <a href="pro-plan.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Pro Plan
+      </a>
+
+      <a href="settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </a>
+
+    </nav>
+
+    <!-- Sidebar footer: user profile + logout -->
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">DT</div>
+        <div>
+          <div class="sidebar-user-name" id="sidebar-username">Demo Trader</div>
+          <div class="sidebar-user-role">Premium Investor</div>
+        </div>
+      </div>
+      <a href="index.html" class="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Log Out
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Topbar: page title + bell icon -->
+    <div class="home-topbar">
+      <div>
+        <!-- Mobile hamburger — only visible on small screens -->
+        <button class="mobile-menu-btn mb-2" id="mobile-menu-btn" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6"  x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <h1 style="font-size:1.6rem; font-weight:700; letter-spacing:-0.02em;">Welcome Back</h1>
+        <!-- Greeting sub-line — user name injected by JS from sessionStorage -->
+        <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
+          Hello, <span id="user-greeting">Investor</span>! Germany market snapshot is ready.
+        </p>
+      </div>
+      <!-- Bell notification icon -->
+      <button class="icon-btn" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Search bar wrapper — position:relative so dropdown anchors correctly -->
+    <div style="position:relative;" class="mb-4">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search any stock, company or index..."
+          autocomplete="off"
+        />
+        <!-- Keyboard shortcut hint -->
+        <span style="font-size:0.72rem;color:var(--text-tertiary);white-space:nowrap;flex-shrink:0;">
+          Live search
+        </span>
+      </div>
+      <!--
+        id="search-dropdown" — main.js injects live Finnhub
+        search results here as the user types. Each result
+        row navigates to stock-detail.html when clicked.
+      -->
+      <div id="search-dropdown"></div>
+    </div>
+
+    <!--
+      id="geo-country-badge" — main.js fills this with the
+      detected country name + flag after geolocation resolves.
+      Hidden by default, shown once location is known.
+    -->
+    <div id="geo-country-badge"
+         style="display:none; align-items:center; gap:6px;
+                background:var(--accent-bg); color:var(--accent);
+                border:1px solid rgba(74,222,128,0.25);
+                border-radius:999px; padding:5px 14px;
+                font-size:0.78rem; font-weight:600;
+                margin-bottom:var(--sp-lg); width:fit-content;">
+      <!-- Filled by JS: e.g. "🇩🇪 Germany detected" -->
+    </div>
+
+    <!-- Two-column layout: main + right panel -->
+    <div class="page-layout">
+
+      <!-- LEFT / MAIN COLUMN -->
+      <div class="page-main">
+
+        <!-- ── KPI TILES ROW ────────────────────────────────
+             4 key metrics shown at a glance — Bloomberg style
+        ─────────────────────────────────────────────────── -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-md);margin-bottom:var(--sp-lg);">
+
+          <div class="kpi-card animate-in">
+            <div class="kpi-icon kpi-icon-green" style="float:right;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div class="kpi-label">Total Balance</div>
+            <div class="kpi-value" id="portfolio-balance">€37,575.10</div>
+            <div class="kpi-change positive">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="18 15 12 9 6 15"></polyline></svg>
+              +5.23% today
+            </div>
+          </div>
+
+          <div class="kpi-card animate-in" style="animation-delay:0.05s;">
+            <div class="kpi-icon kpi-icon-blue" style="float:right;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <div class="kpi-label">Day P&amp;L</div>
+            <div class="kpi-value positive">+€1,861.40</div>
+            <div class="kpi-change positive">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="18 15 12 9 6 15"></polyline></svg>
+              Best day this week
+            </div>
+          </div>
+
+          <div class="kpi-card animate-in" style="animation-delay:0.10s;">
+            <div class="kpi-icon kpi-icon-orange" style="float:right;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              </svg>
+            </div>
+            <div class="kpi-label">Open Positions</div>
+            <div class="kpi-value">5</div>
+            <div class="kpi-change" style="color:var(--text-secondary);">Across 3 markets</div>
+          </div>
+
+          <div class="kpi-card animate-in" style="animation-delay:0.15s;">
+            <div class="kpi-icon kpi-icon-purple" style="float:right;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="kpi-label">Watchlist Alerts</div>
+            <div class="kpi-value">3</div>
+            <div class="kpi-change negative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              2 price targets hit
+            </div>
+          </div>
+
+        </div>
+        <!-- end KPI tiles -->
+
+        <!-- Portfolio Balance Card -->
+        <div class="balance-card">
+          <div class="balance-card-left">
+            <div class="balance-label">Portfolio Balance</div>
+            <div class="balance-amount" id="portfolio-balance-main">€37,575.10</div>
+            <div class="balance-change positive mt-sm" id="portfolio-change-day">
+              ▲ +5.23% Today
+            </div>
+            <div class="text-sm mt-sm" style="color:var(--text-secondary);" id="portfolio-change-month">
+              +€1,861.40 this session
+            </div>
+          </div>
+          <canvas class="donut-placeholder" id="chart-balance-donut" aria-label="Portfolio allocation donut chart"></canvas>
+        </div>
+
+        <!-- Top Movers Section -->
+        <div class="section-header">
+          <span class="section-title">Top Movers Germany</span>
+          <a href="markets.html" class="view-all-link">View all</a>
+        </div>
+
+        <!-- Movers list card
+             Each row is an <a> so clicking navigates to stock detail.
+             id attributes on price/change spans are Finnhub hooks.
+        -->
+        <div class="movers-card" id="top-movers-list">
+
+          <!-- Siemens Energy -->
+          <a href="stock-detail.html" class="stock-item">
+            <div class="ticker-badge badge-sie">SIE</div>
+            <div class="stock-info">
+              <div class="stock-name">Siemens Energy</div>
+              <div class="stock-ticker">ENR.DE</div>
+            </div>
+            <!-- Sparkline canvas — ChartJS draws mini line chart here -->
+            <canvas class="sparkline" id="spark-SIE" aria-label="Siemens Energy sparkline"></canvas>
+            <div class="stock-price-block">
+              <div class="stock-price" id="price-SIE">€18.24</div>
+              <div class="stock-change positive" id="change-SIE">+2.34%</div>
+            </div>
+            <div class="mover-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- SAP SE -->
+          <a href="stock-detail.html" class="stock-item">
+            <div class="ticker-badge badge-sap">SAP</div>
+            <div class="stock-info">
+              <div class="stock-name">SAP SE</div>
+              <div class="stock-ticker">SAP.DE</div>
+            </div>
+            <canvas class="sparkline" id="spark-SAP" aria-label="SAP SE sparkline"></canvas>
+            <div class="stock-price-block">
+              <div class="stock-price" id="price-SAP">€213.65</div>
+              <div class="stock-change positive" id="change-SAP">+1.85%</div>
+            </div>
+            <div class="mover-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Tesla — negative example (red) -->
+          <a href="stock-detail.html" class="stock-item">
+            <div class="ticker-badge badge-tsla">TSLA</div>
+            <div class="stock-info">
+              <div class="stock-name">Tesla Inc.</div>
+              <div class="stock-ticker">TSLA</div>
+            </div>
+            <canvas class="sparkline" id="spark-TSLA" aria-label="Tesla sparkline"></canvas>
+            <div class="stock-price-block">
+              <div class="stock-price" id="price-TSLA">$178.24</div>
+              <div class="stock-change negative" id="change-TSLA">-1.23%</div>
+            </div>
+            <div class="mover-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- NVIDIA -->
+          <a href="stock-detail.html" class="stock-item">
+            <div class="ticker-badge badge-nvda">NVDA</div>
+            <div class="stock-info">
+              <div class="stock-name">NVIDIA Corp.</div>
+              <div class="stock-ticker">NVDA</div>
+            </div>
+            <canvas class="sparkline" id="spark-NVDA" aria-label="NVIDIA sparkline"></canvas>
+            <div class="stock-price-block">
+              <div class="stock-price" id="price-NVDA">$987.54</div>
+              <div class="stock-change positive" id="change-NVDA">+3.45%</div>
+            </div>
+            <div class="mover-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+        </div>
+        <!-- end #top-movers-list -->
+
+        <!-- Index Cards Row — DAX, Dow Jones, NASDAQ -->
+        <div class="index-row" id="index-cards-row">
+
+          <div class="index-card">
+            <div class="index-name">DAX</div>
+            <div class="index-value" id="val-DAX">18,236.5</div>
+            <div class="index-change positive" id="chg-DAX">+1.35%</div>
+          </div>
+
+          <div class="index-card">
+            <div class="index-name">Dow Jones</div>
+            <div class="index-value" id="val-DOW">39,872.99</div>
+            <div class="index-change positive" id="chg-DOW">+0.68%</div>
+          </div>
+
+          <div class="index-card">
+            <div class="index-name">NASDAQ</div>
+            <div class="index-value" id="val-NDX">17,192.5</div>
+            <div class="index-change positive" id="chg-NDX">+0.92%</div>
+          </div>
+
+        </div>
+        <!-- end .index-row -->
+
+        <!-- ── RECENT ACTIVITY LOG ───────────────────────────
+             Shows last 5 trades — reads from sessionStorage
+             in production, static mock here for the exam demo
+        ─────────────────────────────────────────────────── -->
+        <div class="card mt-lg">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-md);">
+            <div class="card-title" style="margin:0;">Recent Activity</div>
+            <a href="portfolio.html" style="font-size:0.72rem;color:var(--accent);font-weight:600;">View all →</a>
+          </div>
+
+          <div class="activity-row">
+            <div class="activity-type activity-buy">BUY</div>
+            <div class="activity-name">Siemens Energy <span style="color:var(--text-secondary);font-weight:400;">ENR.DE</span></div>
+            <div class="activity-shares">120 sh.</div>
+            <div class="activity-total positive">+€2,188.80</div>
+            <div class="activity-time">09:32</div>
+          </div>
+          <div class="activity-row">
+            <div class="activity-type activity-buy">BUY</div>
+            <div class="activity-name">NVIDIA Corp. <span style="color:var(--text-secondary);font-weight:400;">NVDA</span></div>
+            <div class="activity-shares">15 sh.</div>
+            <div class="activity-total positive">+€14,813.10</div>
+            <div class="activity-time">09:45</div>
+          </div>
+          <div class="activity-row">
+            <div class="activity-type activity-sell">SELL</div>
+            <div class="activity-name">Tesla Inc. <span style="color:var(--text-secondary);font-weight:400;">TSLA</span></div>
+            <div class="activity-shares">5 sh.</div>
+            <div class="activity-total negative">-€891.20</div>
+            <div class="activity-time">10:15</div>
+          </div>
+          <div class="activity-row">
+            <div class="activity-type activity-buy">BUY</div>
+            <div class="activity-name">Apple Inc. <span style="color:var(--text-secondary);font-weight:400;">AAPL</span></div>
+            <div class="activity-shares">8 sh.</div>
+            <div class="activity-total positive">+€1,698.80</div>
+            <div class="activity-time">11:02</div>
+          </div>
+          <div class="activity-row">
+            <div class="activity-type activity-buy">BUY</div>
+            <div class="activity-name">SAP SE <span style="color:var(--text-secondary);font-weight:400;">SAP.DE</span></div>
+            <div class="activity-shares">80 sh.</div>
+            <div class="activity-total positive">+€17,092.00</div>
+            <div class="activity-time">13:28</div>
+          </div>
+        </div>
+
+      </div>
+      <!-- end .page-main -->
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+
+        <!-- Markets Supported Card -->
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:var(--sp-sm); margin-bottom:var(--sp-md);">
+            <svg class="markets-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span style="font-size:0.95rem; font-weight:700; color:var(--text-primary);">Markets Supported</span>
+          </div>
+
+          <!-- Country list with flag emojis -->
+          <div class="market-flag-item">
+            <span class="flag">🇩🇪</span>
+            <div>
+              <div>Germany</div>
+              <div class="exchange">(XETRA, DAX)</div>
+            </div>
+          </div>
+          <div class="market-flag-item">
+            <span class="flag">🇺🇸</span>
+            <div>
+              <div>USA</div>
+              <div class="exchange">(NASDAQ, NYSE)</div>
+            </div>
+          </div>
+          <div class="market-flag-item">
+            <span class="flag">🇬🇧</span>
+            <div>
+              <div>UK</div>
+              <div class="exchange">(LSE)</div>
+            </div>
+          </div>
+          <div class="market-flag-item">
+            <span class="flag">🇹🇷</span>
+            <div>
+              <div>Turkey</div>
+              <div class="exchange">(BIST)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portfolio Performance Card (donut + legend) -->
+        <div class="card">
+          <div class="card-title">Portfolio Performance</div>
+          <div class="perf-row">
+            <!-- Allocation legend -->
+            <div class="perf-legend">
+              <div class="alloc-row">
+                <div class="alloc-dot" style="background:#4ade80;"></div>
+                <span class="alloc-label">Equities</span>
+                <span class="alloc-pct">65%</span>
+              </div>
+              <div class="alloc-row">
+                <div class="alloc-dot" style="background:#60a5fa;"></div>
+                <span class="alloc-label">Bonds</span>
+                <span class="alloc-pct">20%</span>
+              </div>
+              <div class="alloc-row">
+                <div class="alloc-dot" style="background:#fb923c;"></div>
+                <span class="alloc-label">Commodities</span>
+                <span class="alloc-pct">10%</span>
+              </div>
+              <div class="alloc-row">
+                <div class="alloc-dot" style="background:#a78bfa;"></div>
+                <span class="alloc-label">Cash</span>
+                <span class="alloc-pct">5%</span>
+              </div>
+            </div>
+            <!-- Donut chart placeholder -->
+            <canvas
+              class="donut-large"
+              id="chart-perf-donut"
+              aria-label="Portfolio performance donut chart"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- Market Sentiment Card -->
+        <div class="sentiment-card">
+          <div style="flex:1;">
+            <!-- Sentiment mini sparkline — ChartJS hook -->
+            <canvas
+              class="sentiment-chart-area"
+              id="chart-sentiment"
+              aria-label="Market sentiment chart"
+            ></canvas>
+          </div>
+          <div class="sentiment-right">
+            <div style="font-size:0.72rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;">
+              <!-- id="sentiment-label" → JS can update "BULLISH" / "BEARISH" -->
+              <span id="sentiment-label">BULLISH</span>
+            </div>
+            <div class="sentiment-value" id="sentiment-pct">78%</div>
+            <div class="sentiment-label" id="sentiment-signal">Strong Buy</div>
+          </div>
+        </div>
+
+      </div>
+      <!-- end .right-panel -->
+
+    </div>
+    <!-- end .page-layout -->
+
+  </main>
+  <!-- end .main-content -->
+
+</div>
+<!-- end .app-shell -->
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Chart.js — loaded here so sparklines can be drawn -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<!-- Our global JS -->
+<script src="js/main.js"></script>
+
+<script>
+  /* ============================================================
+     HOME PAGE — Inline JS
+     Handles:
+     1. User greeting from sessionStorage
+     2. Mobile sidebar toggle
+     3. Sparkline chart drawing (ChartJS placeholders)
+     4. Finnhub API fetch stubs — replace with real calls
+  ============================================================ */
+
+  /* -- 1. GREET THE USER --
+     Read the email stored during login and show it in the heading.
+  */
+  const storedUser = sessionStorage.getItem('pt_user');
+  if (storedUser) {
+    // Show just the first part before @ symbol
+    document.getElementById('user-greeting').textContent =
+      storedUser.split('@')[0] || storedUser;
+  }
+
+  /* -- 2. MOBILE SIDEBAR TOGGLE --
+     Adds/removes .sidebar-open class on <body>.
+     CSS in styles.css uses this class to slide the sidebar in.
+  */
+  document.getElementById('mobile-menu-btn').addEventListener('click', function () {
+    document.body.classList.toggle('sidebar-open');
+  });
+
+  /* -- 3. SPARKLINE HELPER FUNCTION --
+     Draws a tiny line chart inside a <canvas>.
+     Arguments:
+       canvasId  — the id of the <canvas> element
+       dataPoints — array of numbers for the line
+       isPositive — true = green line, false = red line
+  */
+  function drawSparkline(canvasId, dataPoints, isPositive) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return; // Guard: skip if canvas not found
+
+    const color = isPositive ? '#4ade80' : '#ef4444';
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        /* Labels are hidden but Chart.js needs them for data mapping */
+        labels: dataPoints.map(function (_, i) { return i; }),
+        datasets: [{
+          data: dataPoints,
+          borderColor: color,
+          borderWidth: 2,
+          /* Fill area under the line with transparent version of color */
+          fill: true,
+          backgroundColor: isPositive
+            ? 'rgba(74, 222, 128, 0.08)'
+            : 'rgba(239, 68, 68, 0.08)',
+          tension: 0.4,        /* Smooth curve, not jagged */
+          pointRadius: 0,      /* No dots on the sparkline */
+          pointHoverRadius: 0,
+        }]
+      },
+      options: {
+        responsive: false,     /* Fixed size set by CSS */
+        animation: false,      /* No animation for performance */
+        plugins: {
+          legend: { display: false },  /* Hide legend */
+          tooltip: { enabled: false }, /* No tooltip on sparkline */
+        },
+        scales: {
+          x: { display: false }, /* Hide X axis */
+          y: { display: false }, /* Hide Y axis */
+        },
+      }
+    });
+  }
+
+  /* Draw sparklines with mock data —
+     Replace these arrays with real Finnhub intraday data later.
+     Positive stocks trend upward, negative ones trend downward.
+  */
+  drawSparkline('spark-SIE',  [17.6, 17.7, 17.8, 17.9, 18.0, 18.1, 18.2, 18.24], true);
+  drawSparkline('spark-SAP',  [210.0, 211.0, 212.0, 212.5, 213.0, 213.3, 213.5, 213.65], true);
+  drawSparkline('spark-TSLA', [182.0, 181.0, 180.5, 180.0, 179.5, 179.0, 178.5, 178.24], false);
+  drawSparkline('spark-NVDA', [953.0, 960.0, 967.0, 971.0, 978.0, 982.0, 985.0, 987.54], true);
+
+  /* -- Portfolio Donut Chart (balance card) --
+     id="chart-balance-donut"
+     Shows asset allocation breakdown.
+  */
+  new Chart(document.getElementById('chart-balance-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Equities', 'Bonds', 'Commodities', 'Cash'],
+      datasets: [{
+        data: [65, 20, 10, 5],
+        backgroundColor: ['#4ade80', '#60a5fa', '#fb923c', '#a78bfa'],
+        borderWidth: 0,
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: '72%',   /* Wide ring — matches Flutter screenshot */
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true },
+      },
+    }
+  });
+
+  /* -- Portfolio Performance Donut (right panel) -- */
+  new Chart(document.getElementById('chart-perf-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Equities', 'Bonds', 'Commodities', 'Cash'],
+      datasets: [{
+        data: [65, 20, 10, 5],
+        backgroundColor: ['#4ade80', '#60a5fa', '#fb923c', '#a78bfa'],
+        borderWidth: 0,
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: '72%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true },
+      },
+    }
+  });
+
+  /* -- Sentiment Mini Chart --
+     A small upward-trending line in the sentiment card.
+  */
+  new Chart(document.getElementById('chart-sentiment'), {
+    type: 'line',
+    data: {
+      labels: [1,2,3,4,5,6,7,8,9,10],
+      datasets: [{
+        data: [55, 58, 60, 63, 65, 68, 72, 74, 76, 78],
+        borderColor: '#4ade80',
+        borderWidth: 2,
+        fill: true,
+        backgroundColor: 'rgba(74,222,128,0.08)',
+        tension: 0.4,
+        pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } },
+    }
+  });
+
+  /* Search bar + geolocation + live prices are all handled
+     by main.js which is loaded below.
+
+     Update sidebar username from sessionStorage */
+  document.addEventListener('DOMContentLoaded', function() {
+    const u = sessionStorage.getItem('pt_user') || 'Demo Trader';
+    const name = u.split('@')[0] || u;
+    const nameEl = document.getElementById('sidebar-username');
+    const avatarEl = document.getElementById('sidebar-avatar');
+    if (nameEl) nameEl.textContent = name;
+    if (avatarEl) avatarEl.textContent = name.slice(0,2).toUpperCase();
+  });
+</script>
+
+</body>
+</html>

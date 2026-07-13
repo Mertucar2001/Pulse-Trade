@@ -1,0 +1,153 @@
+/* PulseTrade Web App – Frontend Programming Final Exam 2026 */
+
+:root {
+  --bg: #020816;
+  --card: rgba(8, 20, 38, 0.92);
+  --green: #69f06f;
+  --red: #ff4b5c;
+  --muted: #9ca9ba;
+  --border: rgba(255, 255, 255, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: #fff;
+  min-height: 100vh;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(135deg, #020816 0%, #07182d 50%, #020816 100%);
+  z-index: -1;
+}
+
+.navbar {
+  background: rgba(7, 16, 29, 0.95) !important;
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-brand {
+  font-weight: 900;
+  color: var(--green) !important;
+}
+
+.nav-link {
+  color: var(--muted) !important;
+  font-weight: 600;
+}
+
+.nav-link.active, .nav-link:hover {
+  color: var(--green) !important;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #8dff83, #19c95f);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-weight: 900;
+  margin-right: 8px;
+}
+
+.card-glass {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+}
+
+.text-green { color: var(--green) !important; }
+.text-red { color: var(--red) !important; }
+.text-muted-custom { color: var(--muted) !important; }
+
+.btn-pulse {
+  background: var(--green);
+  color: #000;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+}
+
+.btn-pulse:hover {
+  background: #8dff83;
+  color: #000;
+}
+
+.btn-outline-pulse {
+  border: 1px solid var(--green);
+  color: var(--green);
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.stock-row {
+  cursor: pointer;
+  transition: transform .15s, border-color .15s;
+}
+
+.stock-row:hover {
+  transform: translateY(-2px);
+  border-color: var(--green);
+}
+
+.sparkline {
+  width: 90px;
+  height: 34px;
+}
+
+.chart-container {
+  position: relative;
+  height: 320px;
+}
+
+.country-chip, .range-chip, .currency-chip {
+  display: inline-block;
+  padding: 6px 14px;
+  margin: 0 6px 6px 0;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.country-chip.active, .range-chip.active, .currency-chip.active {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(105, 240, 111, .15);
+}
+
+.login-hero {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+}
+
+.login-image {
+  border-radius: 18px;
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  padding: 24px 0;
+  margin-top: 48px;
+}
+
+@media (max-width: 768px) {
+  .chart-container { height: 240px; }
+}

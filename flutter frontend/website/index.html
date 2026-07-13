@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseTrade – Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="index.html">
+        <span class="logo-icon">P</span> PulseTrade
+      </a>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto" id="nav-links"></ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="d-flex flex-wrap align-items-center mb-3">
+      <div>
+        <h1 class="fw-black mb-1">Welcome Back</h1>
+        <p class="text-muted-custom mb-0">Smart Investments, Better Future.</p>
+      </div>
+      <div class="ms-auto text-end">
+        <small class="text-muted-custom">Location</small>
+        <div id="location-label" class="text-green fw-bold">Detecting...</div>
+      </div>
+    </div>
+
+    <div id="country-chips" class="mb-3"></div>
+    <div id="currency-chips" class="mb-4"></div>
+
+    <div class="card-glass p-4 mb-4">
+      <div class="text-muted-custom">Portfolio Balance</div>
+      <h2 class="display-6 fw-bold mb-1" id="balance">€94,560.00</h2>
+      <span class="text-green fw-bold">+4.21% Today</span>
+    </div>
+
+    <h4 class="fw-bold mb-3" id="movers-title">Top Movers</h4>
+    <div id="stocks-list"></div>
+
+    <h4 class="fw-bold mt-4 mb-3">Market Indices</h4>
+    <div class="row g-3" id="indices"></div>
+  </main>
+
+  <footer class="text-center"><div class="container">PulseTrade © 2026 – Frontend Programming Final Exam</div></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById('nav-links').innerHTML = renderNav('index.html');
+
+    async function onDataReady() {
+      const region = REGIONS[AppState.countryCode];
+      document.getElementById('location-label').textContent = region.country;
+      document.getElementById('movers-title').textContent = region.label;
+      document.getElementById('balance').textContent = formatPrice(94560, 'EUR');
+      document.getElementById('stocks-list').innerHTML = AppState.stocks.map(s => stockRowHtml(s, true)).join('');
+      document.getElementById('indices').innerHTML = region.indices.map(i => `
+        <div class="col-md-4">
+          <div class="card-glass p-3">
+            <div class="text-muted-custom">${i.name}</div>
+            <div class="fw-bold">${i.value}</div>
+            <div class="${i.up ? 'text-green' : 'text-red'}">${i.change}</div>
+          </div>
+        </div>`).join('');
+      countryChipsHtml('country-chips');
+      currencyChipsHtml('currency-chips');
+      drawSparklines();
+    }
+
+    (async () => {
+      await initApp();
+      await loadStocksAndNews();
+      onDataReady();
+    })();
+  </script>
+</body>
+</html>

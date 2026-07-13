@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseTrade — Markets & News</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+
+  <!-- Our global design system -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* --------------------------------------------------------
+       MARKETS & NEWS PAGE — specific styles
+       Layout: full-width left (news feed) + right stock panel
+       Top: filter pill tabs (All News / Market / Stocks / etc.)
+    -------------------------------------------------------- */
+
+    /* Currency selector in top-right corner */
+    .currency-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background var(--transition);
+      /* This is the element users click to change between EUR/USD/GBP */
+    }
+    .currency-selector:hover { background: var(--bg-elevated); }
+    .currency-selector svg { width: 14px; height: 14px; color: var(--text-secondary); }
+
+    /* Filter tabs row — scrollable on mobile */
+    .filter-tabs {
+      display: flex;
+      gap: var(--sp-sm);
+      margin-bottom: var(--sp-lg);
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px; /* Space for scrollbar on some OS */
+      /* Hide scrollbar visually but keep scroll behavior */
+      scrollbar-width: none;
+    }
+    .filter-tabs::-webkit-scrollbar { display: none; }
+
+    /* News feed card — wraps all article rows */
+    .news-feed-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--sp-lg);
+    }
+
+    /* Each news icon gets a category-specific background color */
+    .news-icon-market  { background: rgba(74, 222, 128, 0.12); color: var(--accent); }
+    .news-icon-stocks  { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
+    .news-icon-economy { background: rgba(251, 146, 60, 0.12); color: #fb923c; }
+    .news-icon-general { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+
+    /* Right stock price panel */
+    .stocks-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .stocks-panel-header {
+      padding: var(--sp-md) var(--sp-lg);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Stock row in right panel — compact version */
+    .panel-stock-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      padding: 12px var(--sp-md);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background var(--transition);
+      text-decoration: none;
+      color: inherit;
+    }
+    .panel-stock-item:last-child { border-bottom: none; }
+    .panel-stock-item:hover { background: var(--bg-elevated); opacity: 1; }
+
+    .panel-ticker-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+    .panel-stock-info { flex: 1; min-width: 0; }
+    .panel-stock-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .panel-stock-ticker {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    /* Right-aligned price + sparkline block */
+    .panel-price-block {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+    }
+    .panel-sparkline {
+      width: 60px;
+      height: 30px;
+    }
+    .panel-price-right { text-align: right; }
+    .panel-price {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .panel-change {
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    /* Two-column layout */
+    .page-layout {
+      display: flex;
+      gap: var(--sp-lg);
+      align-items: flex-start;
+    }
+    .page-main { flex: 1; min-width: 0; }
+    .right-panel {
+      width: 360px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 992px) {
+      .page-layout { flex-direction: column; }
+      .right-panel { width: 100%; }
+    }
+
+    /* "No results" message shown when filter returns nothing */
+    .no-results {
+      padding: var(--sp-xl);
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.88rem;
+      display: none; /* Shown by JS when needed */
+    }
+
+    /* Currency dropdown menu */
+    .currency-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .currency-menu {
+      display: none; /* Toggled by JS */
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      min-width: 100px;
+      z-index: 50;
+      overflow: hidden;
+    }
+    .currency-menu.open { display: block; }
+    .currency-option {
+      padding: 10px var(--sp-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .currency-option:hover { background: var(--bg-surface); color: var(--text-primary); }
+    .currency-option.selected { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── SIDEBAR (same on every authenticated page) ───────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <span class="logo-text">PulseTrade</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="home.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+      </a>
+
+      <!-- Markets — ACTIVE -->
+      <a href="markets.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Markets
+      </a>
+
+      <!-- News — also highlighted since we're on the combined page -->
+      <a href="markets.html" class="nav-item active" style="background:transparent; color:var(--accent);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"></path>
+          <path d="M16 2v4"></path><path d="M8 2v4"></path>
+          <line x1="3" y1="10" x2="17" y2="10"></line>
+        </svg>
+        News
+      </a>
+
+      <a href="portfolio.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+        Portfolio
+      </a>
+
+      <a href="pro-plan.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Pro Plan
+      </a>
+
+      <a href="settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="index.html" class="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Page header row: title + currency selector -->
+    <div class="d-flex align-center justify-between mb-4">
+      <div>
+        <button class="mobile-menu-btn mb-2" id="mobile-menu-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6"  x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <h1 style="font-size:1.6rem; font-weight:700; letter-spacing:-0.02em;">Markets &amp; News</h1>
+        <p style="color:var(--text-secondary); font-size:0.88rem; margin-top:4px;">
+          Live snapshot, country markets, news and stock prices.
+        </p>
+      </div>
+
+      <!-- Currency selector dropdown — top-right corner -->
+      <div class="currency-dropdown">
+        <div class="currency-selector" id="currency-btn">
+          <!-- id="currency-display" updated by JS when user picks a currency -->
+          <span id="currency-display">EUR</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <!-- Dropdown options — toggled open/closed by JS -->
+        <div class="currency-menu" id="currency-menu">
+          <div class="currency-option selected" data-currency="EUR">EUR</div>
+          <div class="currency-option" data-currency="USD">USD</div>
+          <div class="currency-option" data-currency="GBP">GBP</div>
+          <div class="currency-option" data-currency="TRY">TRY</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Search Bar — Finnhub API wired via main.js -->
+    <div style="position:relative; margin-bottom:var(--sp-lg);">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search any stock or company name..."
+          autocomplete="off"
+        />
+        <span style="font-size:0.72rem;color:var(--text-tertiary);white-space:nowrap;flex-shrink:0;">
+          Live search
+        </span>
+      </div>
+      <!-- Dropdown populated by main.js initSearchBar() -->
+      <div id="search-dropdown"></div>
+    </div>
+
+    <!-- ── FILTER TABS ─────────────────────────────────────
+         data-filter attribute is the key used by JS to match
+         against each news item's data-category attribute.
+         "all" shows everything.
+    ────────────────────────────────────────────────────── -->
+    <div class="filter-tabs" id="filter-tabs" role="tablist">
+      <button class="tab-pill active" data-filter="all"      role="tab">All News</button>
+      <button class="tab-pill"        data-filter="market"   role="tab">Market</button>
+      <button class="tab-pill"        data-filter="stocks"   role="tab">Stocks</button>
+      <button class="tab-pill"        data-filter="economy"  role="tab">Economy</button>
+      <button class="tab-pill"        data-filter="germany"  role="tab">Germany</button>
+      <button class="tab-pill"        data-filter="usa"      role="tab">USA</button>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="page-layout">
+
+      <!-- LEFT — News Feed -->
+      <div class="page-main">
+
+        <div class="news-feed-card" id="news-feed">
+
+          <!--
+            Each news item has:
+            - data-category: used by filter JS to show/hide
+            - data-title: used by search to match text
+            Clicking navigates to stock-detail or an article page.
+          -->
+
+          <!-- Article 1 — Market category -->
+          <a href="stock-detail.html"
+             class="news-item"
+             data-category="market germany"
+             data-title="siemens energy wins €2b contract for wind projects">
+            <div class="news-icon news-icon-market">
+              <!-- Briefcase icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </div>
+            <div class="news-body">
+              <div class="news-title">Siemens Energy wins €2B contract for wind projects</div>
+              <div class="news-meta">2h ago · <span class="positive">Market</span></div>
+            </div>
+            <div class="news-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Article 2 — Stocks category -->
+          <a href="stock-detail.html"
+             class="news-item"
+             data-category="stocks germany"
+             data-title="sap launches new ai-powered business suite">
+            <div class="news-icon news-icon-stocks">
+              <!-- Layers icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </div>
+            <div class="news-body">
+              <div class="news-title">SAP launches new AI-powered business suite</div>
+              <div class="news-meta">4h ago · <span style="color:#60a5fa;">Stocks</span></div>
+            </div>
+            <div class="news-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Article 3 — Stocks / USA category -->
+          <a href="stock-detail.html"
+             class="news-item"
+             data-category="stocks usa"
+             data-title="tesla stock rises after earnings report">
+            <div class="news-icon" style="background:rgba(239,68,68,0.12); color:#f87171;">
+              <!-- TrendingUp icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+              </svg>
+            </div>
+            <div class="news-body">
+              <div class="news-title">Tesla stock rises after earnings report</div>
+              <div class="news-meta">6h ago · <span style="color:#60a5fa;">Stocks</span></div>
+            </div>
+            <div class="news-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Article 4 — Economy category -->
+          <a href="#"
+             class="news-item"
+             data-category="economy germany"
+             data-title="european markets rally as inflation cools">
+            <div class="news-icon news-icon-economy">
+              <!-- BarChart icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6"  y1="20" x2="6"  y2="14"></line>
+              </svg>
+            </div>
+            <div class="news-body">
+              <div class="news-title">European markets rally as inflation cools</div>
+              <div class="news-meta">10h ago · <span style="color:#fb923c;">Economy</span></div>
+            </div>
+            <div class="news-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Article 5 — USA category -->
+          <a href="#"
+             class="news-item"
+             data-category="usa market"
+             data-title="fed signals potential rate cut in q3 2026">
+            <div class="news-icon news-icon-general">
+              <!-- Globe icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <div class="news-body">
+              <div class="news-title">Fed signals potential rate cut in Q3 2026</div>
+              <div class="news-meta">14h ago · <span style="color:#a78bfa;">Market</span></div>
+            </div>
+            <div class="news-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Article 6 — Germany / Stocks -->
+          <a href="#"
+             class="news-item"
+             data-category="germany stocks"
+             data-title="nvidia surpasses $1 trillion market cap again">
+            <div class="news-icon news-icon-stocks">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8"  x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="news-body">
+              <div class="news-title">NVIDIA surpasses $1 trillion market cap again</div>
+              <div class="news-meta">1d ago · <span style="color:#60a5fa;">Stocks</span></div>
+            </div>
+            <div class="news-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+        </div>
+        <!-- end #news-feed -->
+
+        <!-- "No results" — shown by JS when filter matches nothing -->
+        <div class="no-results" id="no-results">
+          No news found for this category.
+        </div>
+
+      </div>
+      <!-- end .page-main -->
+
+      <!-- RIGHT PANEL — Stock Prices -->
+      <div class="right-panel">
+
+        <!-- Markets Supported mini card -->
+        <div class="card mb-3">
+          <div style="display:flex; align-items:center; gap:var(--sp-sm); margin-bottom:var(--sp-md);">
+            <svg style="width:22px;height:22px;color:var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span style="font-size:0.92rem; font-weight:700;">Markets Supported</span>
+          </div>
+          <div class="market-flag-item"><span class="flag">🇩🇪</span><div><div>Germany</div><div class="exchange">(XETRA, DAX)</div></div></div>
+          <div class="market-flag-item"><span class="flag">🇺🇸</span><div><div>USA</div><div class="exchange">(NASDAQ, NYSE)</div></div></div>
+          <div class="market-flag-item"><span class="flag">🇬🇧</span><div><div>UK</div><div class="exchange">(LSE)</div></div></div>
+          <div class="market-flag-item"><span class="flag">🇹🇷</span><div><div>Turkey</div><div class="exchange">(BIST)</div></div></div>
+        </div>
+
+        <!-- Stock Prices panel -->
+        <div class="stocks-panel">
+          <div class="stocks-panel-header">Stock Prices</div>
+
+          <!--
+            Each row: ticker badge + name/ticker + sparkline + price/change
+            id attributes on price spans = Finnhub injection points
+          -->
+
+          <!-- Siemens Energy -->
+          <a href="stock-detail.html" class="panel-stock-item">
+            <div class="panel-ticker-badge badge-sie">SIE</div>
+            <div class="panel-stock-info">
+              <div class="panel-stock-name">Siemens Energy</div>
+              <div class="panel-stock-ticker">ENR.DE</div>
+            </div>
+            <div class="panel-price-block">
+              <canvas class="panel-sparkline" id="pspark-SIE"></canvas>
+              <div class="panel-price-right">
+                <div class="panel-price" id="pprice-SIE">€18.24</div>
+                <div class="panel-change positive" id="pchange-SIE">+2.34%</div>
+              </div>
+            </div>
+            <svg style="width:12px;height:12px;color:var(--text-tertiary);margin-left:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+
+          <!-- SAP SE -->
+          <a href="stock-detail.html" class="panel-stock-item">
+            <div class="panel-ticker-badge badge-sap">SAP</div>
+            <div class="panel-stock-info">
+              <div class="panel-stock-name">SAP SE</div>
+              <div class="panel-stock-ticker">SAP.DE</div>
+            </div>
+            <div class="panel-price-block">
+              <canvas class="panel-sparkline" id="pspark-SAP"></canvas>
+              <div class="panel-price-right">
+                <div class="panel-price" id="pprice-SAP">€213.65</div>
+                <div class="panel-change positive" id="pchange-SAP">+1.85%</div>
+              </div>
+            </div>
+            <svg style="width:12px;height:12px;color:var(--text-tertiary);margin-left:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+
+          <!-- Tesla -->
+          <a href="stock-detail.html" class="panel-stock-item">
+            <div class="panel-ticker-badge badge-tsla">TSLA</div>
+            <div class="panel-stock-info">
+              <div class="panel-stock-name">Tesla Inc.</div>
+              <div class="panel-stock-ticker">TSLA</div>
+            </div>
+            <div class="panel-price-block">
+              <canvas class="panel-sparkline" id="pspark-TSLA"></canvas>
+              <div class="panel-price-right">
+                <div class="panel-price" id="pprice-TSLA">$178.24</div>
+                <div class="panel-change negative" id="pchange-TSLA">-1.23%</div>
+              </div>
+            </div>
+            <svg style="width:12px;height:12px;color:var(--text-tertiary);margin-left:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+
+          <!-- NVIDIA -->
+          <a href="stock-detail.html" class="panel-stock-item">
+            <div class="panel-ticker-badge badge-nvda">NVDA</div>
+            <div class="panel-stock-info">
+              <div class="panel-stock-name">NVIDIA Corp.</div>
+              <div class="panel-stock-ticker">NVDA</div>
+            </div>
+            <div class="panel-price-block">
+              <canvas class="panel-sparkline" id="pspark-NVDA"></canvas>
+              <div class="panel-price-right">
+                <div class="panel-price" id="pprice-NVDA">$987.54</div>
+                <div class="panel-change positive" id="pchange-NVDA">+3.45%</div>
+              </div>
+            </div>
+            <svg style="width:12px;height:12px;color:var(--text-tertiary);margin-left:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+
+          <!-- Apple -->
+          <a href="stock-detail.html" class="panel-stock-item">
+            <div class="panel-ticker-badge badge-aapl">AAPL</div>
+            <div class="panel-stock-info">
+              <div class="panel-stock-name">Apple Inc.</div>
+              <div class="panel-stock-ticker">AAPL</div>
+            </div>
+            <div class="panel-price-block">
+              <canvas class="panel-sparkline" id="pspark-AAPL"></canvas>
+              <div class="panel-price-right">
+                <div class="panel-price" id="pprice-AAPL">$212.35</div>
+                <div class="panel-change positive" id="pchange-AAPL">+1.12%</div>
+              </div>
+            </div>
+            <svg style="width:12px;height:12px;color:var(--text-tertiary);margin-left:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+
+        </div>
+        <!-- end .stocks-panel -->
+
+      </div>
+      <!-- end .right-panel -->
+
+    </div>
+    <!-- end .page-layout -->
+
+  </main>
+
+</div>
+<!-- end .app-shell -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+  /* ============================================================
+     MARKETS PAGE — Inline JS
+     Handles:
+     1. Mobile sidebar toggle
+     2. Filter tab switching (show/hide news by category)
+     3. Currency selector dropdown toggle
+     4. Panel sparklines (ChartJS)
+  ============================================================ */
+
+  /* -- 1. MOBILE SIDEBAR -- */
+  document.getElementById('mobile-menu-btn').addEventListener('click', function () {
+    document.body.classList.toggle('sidebar-open');
+  });
+
+  /* -- 2. FILTER TABS --
+     When a tab is clicked:
+     a) Remove .active from all tabs, add to clicked one
+     b) Loop through every news item and check its data-category
+     c) Show the item if its category includes the filter word,
+        hide it otherwise
+     d) Show "no results" message if nothing is visible
+  */
+  const filterTabs  = document.querySelectorAll('#filter-tabs .tab-pill');
+  const newsItems   = document.querySelectorAll('#news-feed .news-item');
+  const noResults   = document.getElementById('no-results');
+
+  filterTabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+
+      /* Step a — update active tab style */
+      filterTabs.forEach(function (t) { t.classList.remove('active'); });
+      this.classList.add('active');
+
+      const filter = this.getAttribute('data-filter'); /* e.g. "stocks" */
+      let visibleCount = 0;
+
+      /* Step b/c — show or hide each news item */
+      newsItems.forEach(function (item) {
+        const categories = item.getAttribute('data-category'); /* e.g. "stocks germany" */
+
+        /* "all" tab shows everything; otherwise check if category includes filter word */
+        const isVisible = filter === 'all' || categories.includes(filter);
+
+        item.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
+      });
+
+      /* Step d — show no-results message if nothing matched */
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    });
+  });
+
+  /* -- 3. CURRENCY DROPDOWN --
+     Toggles the dropdown menu open/closed.
+     Selecting an option updates the display label.
+     Closes if user clicks anywhere outside the dropdown.
+  */
+  const currencyBtn  = document.getElementById('currency-btn');
+  const currencyMenu = document.getElementById('currency-menu');
+  const currencyDisplay = document.getElementById('currency-display');
+
+  /* Toggle open/closed on button click */
+  currencyBtn.addEventListener('click', function (e) {
+    e.stopPropagation(); /* Prevent the outside-click handler from immediately closing */
+    currencyMenu.classList.toggle('open');
+  });
+
+  /* Handle option selection */
+  document.querySelectorAll('.currency-option').forEach(function (option) {
+    option.addEventListener('click', function () {
+      /* Update display text */
+      currencyDisplay.textContent = this.getAttribute('data-currency');
+
+      /* Update selected styling */
+      document.querySelectorAll('.currency-option').forEach(function (o) {
+        o.classList.remove('selected');
+      });
+      this.classList.add('selected');
+
+      /* Close the menu */
+      currencyMenu.classList.remove('open');
+
+      /*
+        FINNHUB HOOK: When currency changes, you would re-fetch
+        prices converted to the selected currency. Example:
+        fetchPricesInCurrency(currencyDisplay.textContent);
+      */
+    });
+  });
+
+  /* Close dropdown when clicking anywhere outside */
+  document.addEventListener('click', function () {
+    currencyMenu.classList.remove('open');
+  });
+
+  /* -- 4. PANEL SPARKLINES --
+     Draws mini charts in the right-side stock price panel.
+     Same drawSparkline pattern as home.html.
+  */
+  function drawPanelSparkline(canvasId, dataPoints, isPositive) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const color = isPositive ? '#4ade80' : '#ef4444';
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: dataPoints.map(function (_, i) { return i; }),
+        datasets: [{
+          data: dataPoints,
+          borderColor: color,
+          borderWidth: 1.5,
+          fill: false, /* No fill on compact panel sparklines */
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+        }]
+      },
+      options: {
+        responsive: false,
+        animation: false,
+        plugins: {
+          legend:  { display: false },
+          tooltip: { enabled: false },
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false },
+        },
+      }
+    });
+  }
+
+  /* Draw each panel sparkline with mock data */
+  drawPanelSparkline('pspark-SIE',  [17.6, 17.8, 17.9, 18.0, 18.1, 18.24], true);
+  drawPanelSparkline('pspark-SAP',  [210.0, 211.5, 212.0, 213.0, 213.4, 213.65], true);
+  drawPanelSparkline('pspark-TSLA', [182.0, 181.0, 180.0, 179.0, 178.5, 178.24], false);
+  drawPanelSparkline('pspark-NVDA', [953.0, 965.0, 972.0, 980.0, 985.0, 987.54], true);
+  drawPanelSparkline('pspark-AAPL', [209.0, 210.0, 211.0, 211.5, 212.0, 212.35], true);
+
+  /*
+    FINNHUB FETCH STUB:
+    Replace mock data above with real API calls. Example pattern:
+
+    const SYMBOLS = ['ENR.DE', 'SAP.DE', 'TSLA', 'NVDA', 'AAPL'];
+    const API_KEY = 'YOUR_FINNHUB_KEY';
+
+    SYMBOLS.forEach(function(symbol) {
+      fetch('https://finnhub.io/api/v1/quote?symbol=' + symbol + '&token=' + API_KEY)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var change = ((data.c - data.pc) / data.pc * 100).toFixed(2);
+          var shortSymbol = symbol.split('.')[0];
+          var priceEl  = document.getElementById('pprice-' + shortSymbol);
+          var changeEl = document.getElementById('pchange-' + shortSymbol);
+          if (priceEl)  priceEl.textContent  = '€' + data.c.toFixed(2);
+          if (changeEl) {
+            changeEl.textContent = (change >= 0 ? '+' : '') + change + '%';
+            changeEl.className   = 'panel-change ' + (change >= 0 ? 'positive' : 'negative');
+          }
+        });
+    });
+  */
+</script>
+
+</body>
+</html>
